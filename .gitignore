@@ -1,0 +1,38 @@
+# Gradle
+.gradle/
+build/
+bin/
+
+# Fabric Loom
+.fabric/
+run/
+
+# IDEs and Editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Compiled Java & Bytecode
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Logs & temp files
+*.log
+__pycache__/
+*.pyc
+
+# Temporary folders & research files
+scratch/
+src_decompiled/
+*.litematic
