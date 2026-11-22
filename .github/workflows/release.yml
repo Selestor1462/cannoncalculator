@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag'
+        required: true
+        default: 'v1.0.0'
+      release_name:
+        description: 'Release Name'
+        required: true
+        default: 'Cannon Calculator 1.0.0'
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build (${{ matrix.branch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ['26.3', '26.2', '1.21.11', '1.21.10', '1.21']
+    steps:
+      - name: Checkout branch ${{ matrix.branch }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'gradle'
+
+      - name: Make Gradle Wrapper executable
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build --no-daemon
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p artifacts
+          MOD_JAR=$(find build/libs -name "cannoncalculator-*.jar" ! -name "*-sources.jar" ! -name "*-dev.jar" | head -n 1)
+          SOURCES_JAR=$(find build/libs -name "cannoncalculator-*-sources.jar" | head -n 1)
+          if [ -n "$MOD_JAR" ] && [ -f "$MOD_JAR" ]; then
+            cp "$MOD_JAR" "artifacts/cannoncalculator-1.0.0+${{ matrix.branch }}.jar"
+          fi
+          if [ -n "$SOURCES_JAR" ] && [ -f "$SOURCES_JAR" ]; then
+            cp "$SOURCES_JAR" "artifacts/cannoncalculator-1.0.0+${{ matrix.branch }}-sources.jar"
+          fi
+          ls -la artifacts/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mod-${{ matrix.branch }}
+          path: artifacts/*.jar
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_assets
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -la release_assets/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag_name }}
+          name: ${{ inputs.release_name }}
+          draft: false
+          prerelease: ${{ inputs.prerelease }}
+          files: release_assets/*.jar
+          body: |
+            ## Cannon Calculator 1.0.0
+
+            Client-side Minecraft Fabric mod for calculating, encoding, and validating trajectories for the **FTL Pearl Cannon** and **Pig Cannon**.
+
+            ### Downloads & Supported Minecraft Versions
+            - **26.3**: `cannoncalculator-1.0.0+26.3.jar` (Fabric Loader 0.20.1+, Java 25)
+            - **26.2**: `cannoncalculator-1.0.0+26.2.jar` (Fabric Loader 0.20.1+, Java 25)
+            - **1.21.11**: `cannoncalculator-1.0.0+1.21.11.jar` (Fabric Loader 0.19.5+, Java 21/25)
+            - **1.21.10**: `cannoncalculator-1.0.0+1.21.10.jar` (Fabric Loader 0.19.5+, Java 21/25)
+            - **1.21**: `cannoncalculator-1.0.0+1.21.jar` (Fabric Loader 0.16.0+, Java 21)
+
+            ### Main Features
+            - **Command**: `/cannon` (or `/cannon gui`) to open the calculator interface.
+            - **Integrated EasyPlace**: Auto-places ghost outlines from inventory with accurate observer/rail rotations.
+            - **Sub-Block FTL Targeting**: Center-of-block targeting (`X.5`, `Z.5`) and adaptive catcher positioning.
+            - **Pig Cannon Support**: Four-stage acceleration timings, landing prediction, and Twisting Vines terrain placement.
+            - **Sequential Rails Mode**: Step-by-step ghost rail rendering.
+            - **In-World Status HUD**: Real-time action-bar overlay.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
