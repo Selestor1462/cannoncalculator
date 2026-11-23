@@ -87,7 +87,7 @@ jobs:
             ## Cannon Calculator 1.1.0
 
             - Hotfix: item duplication in singleplayer
-            - Moved return cannon generator from schematic tiling mod
+            - Moved return cannon generator from [Schematic Tiling](https://github.com/Selestor1462/Schematic-Tiling-javafied)
             - Fix extra block placement when out of items in EasyPlace
             - Add Russian translation
 
