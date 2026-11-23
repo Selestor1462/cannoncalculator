@@ -117,16 +117,64 @@ public final class CatcherPlacementManager {
     private static void placeAt(Minecraft client, Player player, InteractionHand hand, BlockPos pos, Vec3 hitVec) {
         if (client.gameMode == null || client.level == null) return;
         if (player instanceof net.minecraft.client.player.LocalPlayer lp) {
-            // 1. In Creative mode: use /setblock so it works floating in midair without ghosting
-            if (player.isCreative()) {
-                lp.connection.sendCommand(String.format(java.util.Locale.ROOT,
-                    "setblock %d %d %d minecraft:red_stained_glass", pos.getX(), pos.getY(), pos.getZ()));
-                player.sendOverlayMessage(Component.literal("§a[FTL] Set catcher block at " + pos.toShortString() + "!"));
+            Level world = client.level;
+            BlockState targetState = net.minecraft.world.level.block.Blocks.STAINED_GLASS.red().defaultBlockState();
+            net.minecraft.world.item.Item redGlass = net.minecraft.world.level.block.Blocks.STAINED_GLASS.red().asItem();
+
+            // 1. Singleplayer (Integrated Server): Place directly on server level like Litematica does, no commands
+            if (client.isLocalServer() && client.getSingleplayerServer() != null) {
+                net.minecraft.server.MinecraftServer server = client.getSingleplayerServer();
+                server.execute(() -> {
+                    net.minecraft.server.level.ServerPlayer serverPlayer = server.getPlayerList().getPlayer(player.getUUID());
+                    net.minecraft.server.level.ServerLevel serverWorld = server.getLevel(world.dimension());
+                    if (serverWorld == null || serverPlayer == null) return;
+
+                    if (!serverPlayer.isCreative()) {
+                        int slotToConsume = -1;
+                        for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
+                            ItemStack s = serverPlayer.getInventory().getItem(i);
+                            if (s != null && !s.isEmpty() && (s.is(redGlass) || s.is(net.minecraft.world.item.Items.HONEY_BLOCK) || s.is(net.minecraft.world.item.Items.SLIME_BLOCK))) {
+                                slotToConsume = i;
+                                break;
+                            }
+                        }
+                        if (slotToConsume == -1) return;
+                        ItemStack s = serverPlayer.getInventory().getItem(slotToConsume);
+                        s.shrink(1);
+                        if (s.isEmpty()) {
+                            serverPlayer.getInventory().setItem(slotToConsume, ItemStack.EMPTY);
+                        }
+                        serverPlayer.containerMenu.broadcastChanges();
+                        serverPlayer.inventoryMenu.broadcastChanges();
+                    }
+
+                    serverWorld.setBlock(pos, targetState, net.minecraft.world.level.block.Block.UPDATE_ALL);
+                    net.minecraft.world.level.block.SoundType st = targetState.getSoundType();
+                    serverWorld.playSound(null, pos, st.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, (st.getVolume() + 1.0f) / 2.0f, st.getPitch() * 0.8f);
+                });
+
+                if (!player.isCreative()) {
+                    ItemStack held = player.getItemInHand(hand);
+                    if (held.is(redGlass) || held.is(net.minecraft.world.item.Items.HONEY_BLOCK) || held.is(net.minecraft.world.item.Items.SLIME_BLOCK)) {
+                        held.shrink(1);
+                    } else {
+                        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                            ItemStack s = player.getInventory().getItem(i);
+                            if (s.is(redGlass) || s.is(net.minecraft.world.item.Items.HONEY_BLOCK) || s.is(net.minecraft.world.item.Items.SLIME_BLOCK)) {
+                                s.shrink(1);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                world.setBlock(pos, targetState, net.minecraft.world.level.block.Block.UPDATE_ALL);
+                lp.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+                player.sendOverlayMessage(Component.literal("§a[FTL] Placed catcher block at " + pos.toShortString() + "!"));
                 return;
             }
 
-            // 2. In Survival: check if there is an adjacent existing solid block to place against
-            Level world = client.level;
+            // 2. Multiplayer: check if there is an adjacent existing solid block to place against
             Direction supportDir = null;
             for (Direction dir : Direction.values()) {
                 BlockPos neighbor = pos.relative(dir);
@@ -137,15 +185,16 @@ public final class CatcherPlacementManager {
                 }
             }
 
-            if (supportDir != null) {
-                BlockPos neighborPos = pos.relative(supportDir.getOpposite());
-                Vec3 neighborCenter = Vec3.atCenterOf(neighborPos);
-                BlockHitResult hit = new BlockHitResult(neighborCenter, supportDir, neighborPos, false);
-                client.gameMode.useItemOn(lp, hand, hit);
-                player.sendOverlayMessage(Component.literal("§a[FTL] Placed catcher block at " + pos.toShortString() + "!"));
-            } else {
-                player.sendOverlayMessage(Component.literal("§c[FTL] Cannot place in mid-air! Place a supporting block first or use Creative/Cheats."));
-            }
+            BlockPos clickPos = (supportDir != null) ? pos.relative(supportDir.getOpposite()) : pos;
+            Direction clickFace = (supportDir != null) ? supportDir : Direction.UP;
+            Vec3 clickLocation = (supportDir != null) ? Vec3.atCenterOf(clickPos) : hitVec;
+
+            // Apply Servux / Carpet Accurate Block Placement protocol
+            Vec3 finalHitVec = dev.selestor1462.cannonencoder.client.easyplace.EasyPlaceManager.applyServuxProtocol(pos, targetState, clickLocation);
+            BlockHitResult hit = new BlockHitResult(finalHitVec, clickFace, clickPos, false);
+            client.gameMode.useItemOn(lp, hand, hit);
+            lp.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            player.sendOverlayMessage(Component.literal("§a[FTL] Placed catcher block at " + pos.toShortString() + "!"));
         }
     }
 }
