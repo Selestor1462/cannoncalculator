@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -47,6 +48,10 @@ public final class CatcherPlacementManager {
         }
 
         SessionState state = this.stateStore.get(session.get().environmentKey());
+        if (!state.easyPlaceEnabled()) {
+            return InteractionResult.PASS;
+        }
+
         BlockPos catcherPos = state.activeCatcherPos();
         if (catcherPos == null) {
             return InteractionResult.PASS;
@@ -110,11 +115,37 @@ public final class CatcherPlacementManager {
     }
 
     private static void placeAt(Minecraft client, Player player, InteractionHand hand, BlockPos pos, Vec3 hitVec) {
-        if (client.gameMode == null) return;
+        if (client.gameMode == null || client.level == null) return;
         if (player instanceof net.minecraft.client.player.LocalPlayer lp) {
-            BlockHitResult hit = new BlockHitResult(hitVec, Direction.UP, pos, false);
-            client.gameMode.useItemOn(lp, hand, hit);
-            player.sendOverlayMessage(Component.literal("§a[FTL] Placed catcher block midair at " + pos.toShortString() + "!"));
+            // 1. In Creative mode: use /setblock so it works floating in midair without ghosting
+            if (player.isCreative()) {
+                lp.connection.sendCommand(String.format(java.util.Locale.ROOT,
+                    "setblock %d %d %d minecraft:red_stained_glass", pos.getX(), pos.getY(), pos.getZ()));
+                player.sendOverlayMessage(Component.literal("§a[FTL] Set catcher block at " + pos.toShortString() + "!"));
+                return;
+            }
+
+            // 2. In Survival: check if there is an adjacent existing solid block to place against
+            Level world = client.level;
+            Direction supportDir = null;
+            for (Direction dir : Direction.values()) {
+                BlockPos neighbor = pos.relative(dir);
+                BlockState nState = world.getBlockState(neighbor);
+                if (!nState.isAir() && !nState.canBeReplaced()) {
+                    supportDir = dir.getOpposite(); // The face of neighbor pointing towards pos
+                    break;
+                }
+            }
+
+            if (supportDir != null) {
+                BlockPos neighborPos = pos.relative(supportDir.getOpposite());
+                Vec3 neighborCenter = Vec3.atCenterOf(neighborPos);
+                BlockHitResult hit = new BlockHitResult(neighborCenter, supportDir, neighborPos, false);
+                client.gameMode.useItemOn(lp, hand, hit);
+                player.sendOverlayMessage(Component.literal("§a[FTL] Placed catcher block at " + pos.toShortString() + "!"));
+            } else {
+                player.sendOverlayMessage(Component.literal("§c[FTL] Cannot place in mid-air! Place a supporting block first or use Creative/Cheats."));
+            }
         }
     }
 }
