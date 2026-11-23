@@ -120,7 +120,7 @@ public final class PigCannonScreen extends Screen {
         HighlightManager highlightManager,
         dev.selestor1462.cannonencoder.client.easyplace.EasyPlaceManager easyPlaceManager
     ) {
-        super(Component.literal("Cannon Calculator"));
+        super(Component.translatable("cannoncalculator.gui.title"));
         this.stateStore = stateStore;
         this.highlightManager = highlightManager;
         this.easyPlaceManager = easyPlaceManager;
@@ -208,36 +208,36 @@ public final class PigCannonScreen extends Screen {
             int modeBtnWidth = 104;
             int sizeBtnWidth = 86;
             this.modeBtn = Button.builder(
-                Component.literal("Mode: §e" + this.currentMode.displayName()),
+                Component.translatable("cannoncalculator.gui.mode", this.currentMode.displayName()),
                 btn -> this.onToggleMode()
             ).bounds(leftColX, topY, modeBtnWidth, 18).build();
             this.modeBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-                Component.literal("Toggle Cannon Mode (FTL Pearl Cannon / Pig Cannon)")
+                Component.translatable("cannoncalculator.gui.mode.tooltip")
             ));
             this.addRenderableWidget(this.modeBtn);
 
             this.cannonSizeBtn = Button.builder(
-                Component.literal("Size: §e" + getCannonSizeLabel(this.cannonSize)),
+                Component.translatable("cannoncalculator.gui.size", getCannonSizeLabel(this.cannonSize)),
                 btn -> this.onCycleCannonSize()
             ).bounds(leftColX + modeBtnWidth + 4, topY, sizeBtnWidth, 18).build();
             this.cannonSizeBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-                Component.literal("Cycle Cannon Size (Full 6688 / Half 3344 / 1/4 1672)")
+                Component.translatable("cannoncalculator.gui.size.tooltip")
             ));
             this.cannonSizeBtn.visible = true;
             this.addRenderableWidget(this.cannonSizeBtn);
         } else {
             int modeBtnWidth = 194;
             this.modeBtn = Button.builder(
-                Component.literal("Mode: §e" + this.currentMode.displayName()),
+                Component.translatable("cannoncalculator.gui.mode", this.currentMode.displayName()),
                 btn -> this.onToggleMode()
             ).bounds(leftColX, topY, modeBtnWidth, 18).build();
             this.modeBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-                Component.literal("Toggle Cannon Mode (FTL Pearl Cannon / Pig Cannon)")
+                Component.translatable("cannoncalculator.gui.mode.tooltip")
             ));
             this.addRenderableWidget(this.modeBtn);
 
             this.cannonSizeBtn = Button.builder(
-                Component.literal("Size: §e" + getCannonSizeLabel(this.cannonSize)),
+                Component.translatable("cannoncalculator.gui.size", getCannonSizeLabel(this.cannonSize)),
                 btn -> this.onCycleCannonSize()
             ).bounds(leftColX, topY, 0, 0).build();
             this.cannonSizeBtn.visible = false;
@@ -245,15 +245,15 @@ public final class PigCannonScreen extends Screen {
         }
 
         int rightX = getRightX();
-        this.historyBtn = Button.builder(Component.literal("📜 History"), btn -> this.onToggleHistory())
+        this.historyBtn = Button.builder(Component.translatable("cannoncalculator.gui.history"), btn -> this.onToggleHistory())
             .bounds(rightX + 104, 6, 88, 18)
             .build();
         this.historyBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-            Component.literal("View Lamp Presets & Targets History")
+            Component.translatable("cannoncalculator.gui.history.tooltip")
         ));
         this.addRenderableWidget(this.historyBtn);
 
-        this.historyLabelBox = new EditBox(this.font, 0, 0, 100, 14, Component.literal("Target Label"));
+        this.historyLabelBox = new EditBox(this.font, 0, 0, 100, 14, Component.translatable("cannoncalculator.gui.target_label"));
         this.historyLabelBox.setMaxLength(32);
         this.historyLabelBox.visible = false;
         this.historyLabelBox.setResponder(newLabel -> {
@@ -273,50 +273,50 @@ public final class PigCannonScreen extends Screen {
 
         // Destination Inputs
         int destBoxWidth = 60;
-        this.destXBox = new EditBox(this.font, leftColX + 13, inputY, destBoxWidth, 16, Component.literal("Dest X"));
+        this.destXBox = new EditBox(this.font, leftColX + 13, inputY, destBoxWidth, 16, Component.translatable("cannoncalculator.gui.dest_x"));
         this.destXBox.setValue(cachedDestX);
         this.addRenderableWidget(this.destXBox);
 
-        this.destZBox = new EditBox(this.font, leftColX + 89, inputY, destBoxWidth, 16, Component.literal("Dest Z"));
+        this.destZBox = new EditBox(this.font, leftColX + 89, inputY, destBoxWidth, 16, Component.translatable("cannoncalculator.gui.dest_z"));
         this.destZBox.setValue(cachedDestZ);
         this.addRenderableWidget(this.destZBox);
 
-        this.useMyPosBtn = Button.builder(Component.literal("📍 Pos"), btn -> this.onUseMyPos())
+        this.useMyPosBtn = Button.builder(Component.translatable("cannoncalculator.gui.button.pos"), btn -> this.onUseMyPos())
             .bounds(leftColX + 153, inputY, 41, 16)
             .build();
         this.useMyPosBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-            Component.literal("Set target to your current coordinates")
+            Component.translatable("cannoncalculator.gui.button.pos.tooltip")
         ));
         this.addRenderableWidget(this.useMyPosBtn);
 
 
         // FTL Restrictions / Filters (Max TNT, Max Ticks, Max Dist)
         int filterY = inputY + 19;
-        this.maxTntBox = new EditBox(this.font, leftColX + 26, filterY, 44, 16, Component.literal("Max TNT"));
+        this.maxTntBox = new EditBox(this.font, leftColX + 26, filterY, 44, 16, Component.translatable("cannoncalculator.gui.max_tnt"));
         this.maxTntBox.setValue(String.valueOf(this.cannonSize));
         this.maxTntBox.visible = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
         this.addRenderableWidget(this.maxTntBox);
 
-        this.maxTicksBox = new EditBox(this.font, leftColX + 85, filterY, 36, 16, Component.literal("Max Ticks"));
+        this.maxTicksBox = new EditBox(this.font, leftColX + 85, filterY, 36, 16, Component.translatable("cannoncalculator.gui.max_ticks"));
         this.maxTicksBox.setValue(cachedMaxTicks);
         this.maxTicksBox.visible = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
         this.addRenderableWidget(this.maxTicksBox);
 
-        this.maxDistBox = new EditBox(this.font, leftColX + 137, filterY, 36, 16, Component.literal("Max Dist"));
+        this.maxDistBox = new EditBox(this.font, leftColX + 137, filterY, 36, 16, Component.translatable("cannoncalculator.gui.max_dist"));
         this.maxDistBox.setValue(cachedMaxDist);
         this.maxDistBox.visible = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
         this.addRenderableWidget(this.maxDistBox);
 
         // Action buttons row: Set Anchor & Calculate
         int actionY = (this.currentMode == CannonMode.FTL_PEARL_CANNON) ? (filterY + 19) : (inputY + 19);
-        this.setAnchorBtn = Button.builder(Component.literal("⚓ Auto Anchor"), btn -> this.onSetAnchorHere())
+        this.setAnchorBtn = Button.builder(Component.translatable("cannoncalculator.gui.button.auto_anchor"), btn -> this.onSetAnchorHere())
             .bounds(leftColX, actionY, 94, 18)
             .build();
         AnchorState initialAnchor = state.effectiveAnchor(this.currentMode);
         updateAnchorTooltip(initialAnchor);
         this.addRenderableWidget(this.setAnchorBtn);
 
-        this.calculateBtn = Button.builder(Component.literal("§a▶ Calculate"), btn -> this.onCalculate())
+        this.calculateBtn = Button.builder(Component.translatable("cannoncalculator.gui.button.calculate"), btn -> this.onCalculate())
             .bounds(leftColX + 98, actionY, 96, 18)
             .build();
         this.addRenderableWidget(this.calculateBtn);
@@ -324,39 +324,37 @@ public final class PigCannonScreen extends Screen {
         // Bottom action buttons: Place Catcher, TP Catcher, Check Encoding, EasyPlace, Rails Toggle, Glow Toggle, Clear, Done
         int bottomY = this.height - 19;
 
-        this.tpCatcherBtn = Button.builder(Component.literal("✈ TP"), btn -> this.onTpCatcher())
+        this.tpCatcherBtn = Button.builder(Component.translatable("cannoncalculator.gui.button.tp"), btn -> this.onTpCatcher())
             .bounds(0, 0, 36, 16)
             .build();
         this.tpCatcherBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-            Component.literal("Teleport directly to active catcher block position")
+            Component.translatable("cannoncalculator.gui.button.tp.tooltip")
         ));
         this.tpCatcherBtn.visible = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
         this.addRenderableWidget(this.tpCatcherBtn);
 
-        this.checkEncodingBtn = Button.builder(Component.literal("🔍 Check"), btn -> this.onCheckEncoding())
+        this.checkEncodingBtn = Button.builder(Component.translatable("cannoncalculator.gui.button.check"), btn -> this.onCheckEncoding())
             .bounds(0, 0, 42, 16)
             .build();
         this.addRenderableWidget(this.checkEncodingBtn);
 
         boolean easyEnabled = (this.easyPlaceManager != null && this.easyPlaceManager.isEnabled());
-        String easyPlaceText = easyEnabled ? "§a⚡ EasyPlace" : "§7⚡ EasyPlace";
-        this.easyPlaceBtn = Button.builder(Component.literal(easyPlaceText), btn -> this.onToggleEasyPlace())
-            .bounds(0, 0, 58, 16)
-            .build();
+        this.easyPlaceBtn = Button.builder(
+            Component.literal(easyEnabled ? "§a" : "§7").append(Component.translatable("cannoncalculator.gui.easyplace_btn")),
+            btn -> this.onToggleEasyPlace()
+        ).bounds(0, 0, 58, 16).build();
         this.easyPlaceBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-            Component.literal(easyEnabled ? "EasyPlace: Active (click to toggle)" : "EasyPlace: Inactive (click to toggle)")
+            Component.translatable(easyEnabled ? "cannoncalculator.gui.easyplace_active" : "cannoncalculator.gui.easyplace_inactive")
         ));
         this.addRenderableWidget(this.easyPlaceBtn);
 
         boolean seqRails = (this.highlightManager != null && this.highlightManager.isSequentialRails());
-        String railsText = seqRails ? "🛤 Step" : "🛤 All";
-        this.railsToggleBtn = Button.builder(Component.literal(railsText), btn -> this.onToggleSequentialRails())
-            .bounds(0, 0, 42, 16)
-            .build();
+        this.railsToggleBtn = Button.builder(
+            Component.translatable(seqRails ? "cannoncalculator.gui.rails_step" : "cannoncalculator.gui.rails_all"),
+            btn -> this.onToggleSequentialRails()
+        ).bounds(0, 0, 42, 16).build();
         this.railsToggleBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-            Component.literal(seqRails
-                ? "Rails: Step (only render ghost rails after placing supporting block)"
-                : "Rails: All (render all ghost rails immediately)")
+            Component.translatable(seqRails ? "cannoncalculator.gui.rails_step_tooltip" : "cannoncalculator.gui.rails_all_tooltip")
         ));
         this.addRenderableWidget(this.railsToggleBtn);
 
@@ -364,19 +362,19 @@ public final class PigCannonScreen extends Screen {
         if (this.highlightManager != null) {
             this.highlightManager.setVisible(glowOn);
         }
-        String glowText = glowOn ? "👁 ON" : "👁 OFF";
-        this.glowToggleBtn = Button.builder(Component.literal(glowText), btn -> this.onToggleGlow())
-            .bounds(0, 0, 38, 16)
-            .build();
-        this.glowToggleBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Hologram glowing toggle")));
+        this.glowToggleBtn = Button.builder(
+            Component.translatable(glowOn ? "cannoncalculator.gui.glow_on" : "cannoncalculator.gui.glow_off"),
+            btn -> this.onToggleGlow()
+        ).bounds(0, 0, 38, 16).build();
+        this.glowToggleBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("cannoncalculator.gui.glow_tooltip")));
         this.addRenderableWidget(this.glowToggleBtn);
 
-        this.clearHighlightBtn = Button.builder(Component.literal("Clear"), btn -> this.onClearHighlight())
+        this.clearHighlightBtn = Button.builder(Component.translatable("cannoncalculator.gui.button.clear"), btn -> this.onClearHighlight())
             .bounds(0, 0, 36, 16)
             .build();
         this.addRenderableWidget(this.clearHighlightBtn);
 
-        this.doneBtn = Button.builder(Component.literal("Done"), btn -> this.onClose())
+        this.doneBtn = Button.builder(Component.translatable("gui.done"), btn -> this.onClose())
             .bounds(0, 0, 38, 16)
             .build();
         this.addRenderableWidget(this.doneBtn);
@@ -414,11 +412,11 @@ public final class PigCannonScreen extends Screen {
         updateWidgetActiveStates();
     }
 
-    private String getCannonSizeLabel(int size) {
+    private Component getCannonSizeLabel(int size) {
         return switch (size) {
-            case 3344 -> "Half (3344)";
-            case 1672 -> "1/4 (1672)";
-            default -> "Full (6688)";
+            case 3344 -> Component.translatable("cannoncalculator.gui.size.half");
+            case 1672 -> Component.translatable("cannoncalculator.gui.size.quarter");
+            default -> Component.translatable("cannoncalculator.gui.size.full");
         };
     }
 
@@ -430,7 +428,7 @@ public final class PigCannonScreen extends Screen {
         } else {
             this.cannonSize = 6688;
         }
-        this.cannonSizeBtn.setMessage(Component.literal("Size: §e" + getCannonSizeLabel(this.cannonSize)));
+        this.cannonSizeBtn.setMessage(Component.translatable("cannoncalculator.gui.size", getCannonSizeLabel(this.cannonSize)));
         cachedCannonSize = this.cannonSize;
         if (this.maxTntBox != null) {
             this.maxTntBox.setValue(String.valueOf(this.cannonSize));
@@ -634,7 +632,7 @@ public final class PigCannonScreen extends Screen {
                 : "snow layers";
             this.statusMessage = "§c✖ Failed to find " + this.currentMode.displayName() + " anchor nearby! Stand near " + structureTip + " (or set via /cannon anchor set <x> <z>).";
             if (this.minecraft.player != null) {
-                this.minecraft.player.displayClientMessage(Component.literal("§c✖ Failed to find " + this.currentMode.displayName() + " anchor nearby!"), true);
+                this.minecraft.player.displayClientMessage(Component.translatable("cannoncalculator.gui.auto_anchor_failed", this.currentMode.displayName()), true);
             }
             return;
         }
@@ -653,7 +651,7 @@ public final class PigCannonScreen extends Screen {
         this.stateStore.set(sessionContext.get().environmentKey(), updated);
         this.statusMessage = "§a✔ Auto-detected " + this.currentMode.displayName() + " Anchor at X=" + targetPos.getX() + ", Y=" + targetPos.getY() + ", Z=" + targetPos.getZ() + " (" + desc + ")!";
         if (this.minecraft.player != null) {
-            this.minecraft.player.displayClientMessage(Component.literal("§a✔ Auto-detected " + this.currentMode.displayName() + " Anchor!"), true);
+            this.minecraft.player.displayClientMessage(Component.translatable("cannoncalculator.gui.auto_anchor_success", this.currentMode.displayName()), true);
         }
         updateAnchorTooltip(anchor);
         this.onApplyHighlight();
@@ -918,7 +916,7 @@ public final class PigCannonScreen extends Screen {
         boolean newVis = !this.highlightManager.isVisible();
         this.highlightManager.setVisible(newVis);
         if (this.glowToggleBtn != null) {
-            this.glowToggleBtn.setMessage(Component.literal(newVis ? "👁 ON" : "👁 OFF"));
+            this.glowToggleBtn.setMessage(Component.translatable(newVis ? "cannoncalculator.gui.glow_on" : "cannoncalculator.gui.glow_off"));
         }
 
         Optional<ClientSessionContext> sessionContext = ClientSessionContext.resolve(this.minecraft);
@@ -932,9 +930,9 @@ public final class PigCannonScreen extends Screen {
     private void onToggleEasyPlace() {
         if (this.easyPlaceManager == null) return;
         boolean enabled = this.easyPlaceManager.toggle();
-        this.easyPlaceBtn.setMessage(Component.literal(enabled ? "§a⚡ EasyPlace" : "§7⚡ EasyPlace"));
+        this.easyPlaceBtn.setMessage(Component.literal(enabled ? "§a" : "§7").append(Component.translatable("cannoncalculator.gui.easyplace_btn")));
         this.easyPlaceBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-            Component.literal(enabled ? "EasyPlace: Active (click to toggle)" : "EasyPlace: Inactive (click to toggle)")
+            Component.translatable(enabled ? "cannoncalculator.gui.easyplace_active" : "cannoncalculator.gui.easyplace_inactive")
         ));
         Optional<ClientSessionContext> sessionContext = ClientSessionContext.resolve(this.minecraft);
         if (sessionContext.isPresent()) {
@@ -947,11 +945,9 @@ public final class PigCannonScreen extends Screen {
     private void onToggleSequentialRails() {
         if (this.highlightManager == null) return;
         boolean enabled = this.highlightManager.toggleSequentialRails();
-        this.railsToggleBtn.setMessage(Component.literal(enabled ? "🛤 Step" : "🛤 All"));
+        this.railsToggleBtn.setMessage(Component.translatable(enabled ? "cannoncalculator.gui.rails_step" : "cannoncalculator.gui.rails_all"));
         this.railsToggleBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
-            Component.literal(enabled
-                ? "Rails: Step (only render ghost rails after placing supporting block)"
-                : "Rails: All (render all ghost rails immediately)")
+            Component.translatable(enabled ? "cannoncalculator.gui.rails_step_tooltip" : "cannoncalculator.gui.rails_all_tooltip")
         ));
         Optional<ClientSessionContext> sessionContext = ClientSessionContext.resolve(this.minecraft);
         if (sessionContext.isPresent()) {
@@ -980,7 +976,7 @@ public final class PigCannonScreen extends Screen {
         if (this.lastReport.isValid()) {
             this.statusMessage = "§aEncoding Check: ALL " + this.lastReport.totalChecked() + " BLOCKS VERIFIED!";
             if (client.player != null) {
-                client.player.displayClientMessage(Component.literal("§a§l✔ ENCODING COMPLETE & READY TO FIRE!"), true);
+                client.player.displayClientMessage(Component.translatable("cannoncalculator.gui.encoding_ready"), true);
             }
         } else {
             this.statusMessage = "§cEncoding Check: Found " + this.lastReport.errors().size() + " error(s)! Check chat.";
@@ -1274,7 +1270,7 @@ public final class PigCannonScreen extends Screen {
 
         graphics.drawString(
             this.font,
-            Component.literal("§6⚡ Redstone Lamp Selector (4×9)"),
+            Component.translatable("cannoncalculator.gui.lamp_selector"),
             rightX + 14,
             panelY,
             0xFFFFA000
@@ -1361,16 +1357,16 @@ public final class PigCannonScreen extends Screen {
         graphics.renderOutline(x, y, width, height, isHovered ? 0xFFFFA000 : 0xFF333333);
 
         if (this.currentResultIndex < 0 || this.currentResultIndex >= this.ftlResults.size()) {
-            graphics.drawString(this.font, Component.literal("§6FTL Encoding"), x + 4, y + 4, 0xFFFFA000);
-            graphics.drawCenteredString(this.font, Component.literal("§7None"), x + width / 2, y + height / 2 - 4, 0xFF888888);
+            graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.ftl_encoding"), x + 4, y + 4, 0xFFFFA000);
+            graphics.drawCenteredString(this.font, Component.translatable("cannoncalculator.gui.none"), x + width / 2, y + height / 2 - 4, 0xFF888888);
             return;
         }
 
         FtlCalculationResult res = this.ftlResults.get(this.currentResultIndex);
         FtlEncodingData enc = res.encodingData();
         if (enc == null) {
-            graphics.drawString(this.font, Component.literal("§6FTL Encoding"), x + 4, y + 4, 0xFFFFA000);
-            graphics.drawCenteredString(this.font, Component.literal("§7None"), x + width / 2, y + height / 2 - 4, 0xFF888888);
+            graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.ftl_encoding"), x + 4, y + 4, 0xFFFFA000);
+            graphics.drawCenteredString(this.font, Component.translatable("cannoncalculator.gui.none"), x + width / 2, y + height / 2 - 4, 0xFF888888);
             return;
         }
 
@@ -1452,7 +1448,7 @@ public final class PigCannonScreen extends Screen {
 
         if (isHovered) {
             graphics.setTooltipForNextFrame(
-                Component.literal("§eClick to copy encoding bits to clipboard"),
+                Component.translatable("cannoncalculator.gui.copy_bits_tooltip"),
                 mouseX, mouseY
             );
         }
@@ -1466,8 +1462,8 @@ public final class PigCannonScreen extends Screen {
         if (this.ftlResults.isEmpty()) {
             graphics.fill(x, y, x + width, y + height, 0x99111111);
             graphics.renderOutline(x, y, width, height, 0xFF333333);
-            graphics.drawCenteredString(this.font, Component.literal("§7No trajectories calculated."), x + width / 2, y + height / 2 - 4, 0xFF888888);
-            graphics.drawCenteredString(this.font, Component.literal("§8Set target & click Calculate"), x + width / 2, y + height / 2 + 6, 0xFF666666);
+            graphics.drawCenteredString(this.font, Component.translatable("cannoncalculator.gui.no_trajectories"), x + width / 2, y + height / 2 - 4, 0xFF888888);
+            graphics.drawCenteredString(this.font, Component.translatable("cannoncalculator.gui.set_target_calc"), x + width / 2, y + height / 2 + 6, 0xFF666666);
             return;
         }
 
@@ -1559,7 +1555,7 @@ public final class PigCannonScreen extends Screen {
             cachedCannonSize = this.cannonSize;
         }
 
-        graphics.drawString(this.font, Component.literal("§6Pig Cannon Encoding"), x + 4, y + 4, 0xFFFFA000);
+            graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.pig_encoding"), x + 4, y + 4, 0xFFFFA000);
         if (state.lastCalculation() != null && h >= 68) {
             CalculationResult calc = state.lastCalculation();
             int totalTicks = calc.straightAccelFirst() + calc.straightAccelSecond() + calc.diagonalAccelThird() + calc.diagonalAccelFourth() + calc.directionCode();
@@ -1577,7 +1573,7 @@ public final class PigCannonScreen extends Screen {
             graphics.drawString(this.font, Component.literal("§7Dir: §e" + calc.directionCode() + " §7| Land: §a[" + calc.landingX() + ", " + calc.landingZ() + "]"), x + 4, y + 16, 0xFFDDDDDD);
             graphics.drawString(this.font, Component.literal("§6Time: §e" + totalTicks + "t §7(~" + String.format(java.util.Locale.ROOT, "%.1fm", minutes) + ")"), x + 4, y + 27, 0xFFDDDDDD);
         } else {
-            graphics.drawCenteredString(this.font, Component.literal("§7None"), x + width / 2, y + h / 2 - 4, 0xFF888888);
+        graphics.drawCenteredString(this.font, Component.translatable("cannoncalculator.gui.none"), x + width / 2, y + h / 2 - 4, 0xFF888888);
         }
     }
 
@@ -1658,18 +1654,18 @@ public final class PigCannonScreen extends Screen {
         graphics.renderOutline(panelX, panelY, panelW, panelH, 0xFFFFA000);
 
         // Title and Close button
-        graphics.drawString(this.font, Component.literal("§6§l📜 Lamp Slot Presets & Targets History"), panelX + 8, panelY + 6, 0xFFFFA000);
+        graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.history_title_full"), panelX + 8, panelY + 6, 0xFFFFA000);
         boolean closeHover = (mouseX >= panelX + panelW - 55 && mouseX < panelX + panelW - 5 && mouseY >= panelY + 4 && mouseY < panelY + 18);
         graphics.fill(panelX + panelW - 55, panelY + 4, panelX + panelW - 5, panelY + 18, closeHover ? 0xFFCC3333 : 0xFF442222);
         graphics.renderOutline(panelX + panelW - 55, panelY + 4, 50, 14, 0xFFDD5555);
-        graphics.drawCenteredString(this.font, Component.literal("§f✖ Close"), panelX + panelW - 30, panelY + 7, 0xFFFFFFFF);
+        graphics.drawCenteredString(this.font, Component.translatable("cannoncalculator.gui.button.close"), panelX + panelW - 30, panelY + 7, 0xFFFFFFFF);
 
         Optional<ClientSessionContext> sessionContext = ClientSessionContext.resolve(this.minecraft);
         SessionState state = sessionContext.map(c -> this.stateStore.get(c.environmentKey())).orElse(SessionState.empty());
         List<TargetRecord> history = state.targetHistory();
 
         // Left Section: Interactive 4x9 Lamp Grid to check individual lamps
-        graphics.drawString(this.font, Component.literal("§e4×9 Lamp Presets §7(Glow = Programmed):"), panelX + 8, panelY + 18, 0xFFFFD54F);
+        graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.presets_title"), panelX + 8, panelY + 18, 0xFFFFD54F);
 
         int cellSize = 18;
         int gap = 2;
@@ -1736,7 +1732,7 @@ public final class PigCannonScreen extends Screen {
             graphics.drawString(this.font, Component.literal(String.format(java.util.Locale.ROOT, "§aDest: §eX=%d, Z=%d §7(%.0fm)", inspectedTarget.destX(), inspectedTarget.destZ(), inspectedTarget.distance())), infoX + 6, infoY + 28, 0xFF55FF55);
 
             // Editable custom label
-            graphics.drawString(this.font, Component.literal("§7Name:"), infoX + 6, infoY + 42, 0xFFFFA000);
+            graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.slot_name"), infoX + 6, infoY + 42, 0xFFFFA000);
             if (this.historyLabelBox != null) {
                 int labelX = infoX + 40;
                 int labelY = infoY + 39;
@@ -1754,15 +1750,17 @@ public final class PigCannonScreen extends Screen {
             boolean btnHover = (mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH);
             graphics.fill(btnX, btnY, btnX + btnW, btnY + btnH, btnHover ? 0xFF2E7D32 : 0xFF1B5E20);
             graphics.renderOutline(btnX, btnY, btnW, btnH, btnHover ? 0xFF81C784 : 0xFF4CAF50);
-            String btnText = isCurrentInspected ? "§a✔ Active (Click to Close)" : "§a▶ Apply & Close";
-            graphics.drawCenteredString(this.font, Component.literal(btnText), btnX + btnW / 2, btnY + 7, 0xFFFFFFFF);
+            Component btnComp = isCurrentInspected
+                ? Component.translatable("cannoncalculator.gui.slot_active_close")
+                : Component.translatable("cannoncalculator.gui.slot_apply");
+            graphics.drawCenteredString(this.font, btnComp, btnX + btnW / 2, btnY + 7, 0xFFFFFFFF);
         } else {
             if (this.historyLabelBox != null) {
                 this.historyLabelBox.visible = false;
             }
-            graphics.drawString(this.font, Component.literal("§7Status: §8Empty / Unassigned"), infoX + 6, infoY + 20, 0xFF888888);
-            graphics.drawString(this.font, Component.literal("§7No past target assigned to"), infoX + 6, infoY + 32, 0xFF888888);
-            graphics.drawString(this.font, Component.literal("§7this lamp in this world."), infoX + 6, infoY + 44, 0xFF888888);
+            graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.status_empty"), infoX + 6, infoY + 20, 0xFF888888);
+            graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.no_past_target"), infoX + 6, infoY + 32, 0xFF888888);
+            graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.this_lamp_world"), infoX + 6, infoY + 44, 0xFF888888);
 
             int btnX = infoX + 6;
             int btnY = infoY + 60;
@@ -1771,8 +1769,8 @@ public final class PigCannonScreen extends Screen {
             boolean btnHover = (mouseX >= btnX && mouseX < btnX + btnW && mouseY >= btnY && mouseY < btnY + btnH);
             graphics.fill(btnX, btnY, btnX + btnW, btnY + btnH, btnHover ? 0xFF0277BD : 0xFF01579B);
             graphics.renderOutline(btnX, btnY, btnW, btnH, btnHover ? 0xFF4FC3F7 : 0xFF29B6F6);
-            String btnEmptyText = isCurrentInspected ? "§b✔ Selected (Click to Close)" : "§bSelect & Close";
-            graphics.drawCenteredString(this.font, Component.literal(btnEmptyText), btnX + btnW / 2, btnY + 6, 0xFFFFFFFF);
+            Component btnEmptyComp = isCurrentInspected ? Component.translatable("cannoncalculator.gui.slot_selected_close") : Component.translatable("cannoncalculator.gui.slot_select_close");
+            graphics.drawCenteredString(this.font, btnEmptyComp, btnX + btnW / 2, btnY + 6, 0xFFFFFFFF);
         }
 
         // Bottom Section: History List of all past targets
@@ -1781,10 +1779,10 @@ public final class PigCannonScreen extends Screen {
         graphics.fill(panelX + 8, listY, panelX + panelW - 8, listY + listH, 0xCC111111);
         graphics.renderOutline(panelX + 8, listY, panelW - 16, listH, 0xFF333333);
 
-        graphics.drawString(this.font, Component.literal("§6📜 Targets History §7(Click row to inspect, ✕ to delete):"), panelX + 12, listY + 4, 0xFFFFA000);
+        graphics.drawString(this.font, Component.translatable("cannoncalculator.gui.history_title"), panelX + 12, listY + 4, 0xFFFFA000);
 
         if (history == null || history.isEmpty()) {
-            graphics.drawCenteredString(this.font, Component.literal("§7No targets saved yet in history."), panelX + panelW / 2, listY + listH / 2 - 4, 0xFF888888);
+            graphics.drawCenteredString(this.font, Component.translatable("cannoncalculator.gui.history_empty"), panelX + panelW / 2, listY + listH / 2 - 4, 0xFF888888);
             return;
         }
 
@@ -1831,7 +1829,7 @@ public final class PigCannonScreen extends Screen {
             graphics.renderOutline(delX, delY, delW, delH, isDeleteHover ? 0xFFFF5252 : 0xFF883333);
             graphics.drawCenteredString(this.font, Component.literal("✕"), delX + delW / 2, delY + 2, isDeleteHover ? 0xFFFFFFFF : 0xFFFFAAAA);
             if (isDeleteHover) {
-                graphics.setTooltipForNextFrame(Component.literal("§cDelete target from history"), mouseX, mouseY);
+                graphics.setTooltipForNextFrame(Component.translatable("cannoncalculator.gui.delete_target_tooltip"), mouseX, mouseY);
             }
         }
 
