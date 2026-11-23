@@ -494,7 +494,7 @@ public class GuiCannonSimulation extends GuiBase {
                 this.drawString(ctx, String.format(Locale.ROOT, "Distance Flown: \u00a7f%.2f m", sol.distance), col2X + 8, y2, 0xFFAAAAAA);
                 y2 += 14;
 
-                this.drawString(ctx, "\u00a7a[вњ“] The pearl trajectory reaches", col2X + 8, y2, 0xFF77FF77);
+                this.drawString(ctx, "\u00a7a[✓] The pearl trajectory reaches", col2X + 8, y2, 0xFF77FF77);
                 y2 += 11;
                 this.drawString(ctx, "\u00a7athe catcher safely with no obstacles.", col2X + 8, y2, 0xFF77FF77);
             }

@@ -87,6 +87,9 @@ public final class BlockPickerManager {
         for (int i = 0; i < 9; i++) {
             if (inv.getItem(i).is(requiredItem)) {
                 inv.setSelectedSlot(i);
+                if (client.getConnection() != null) {
+                    client.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(i));
+                }
                 if (playFeedback) {
                     playPickSound(client);
                     showPickFeedback(client, requiredItem);
@@ -99,6 +102,9 @@ public final class BlockPickerManager {
         for (int i = 9; i < 36; i++) {
             if (inv.getItem(i).is(requiredItem)) {
                 inv.pickSlot(i);
+                if (client.getConnection() != null) {
+                    client.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(inv.getSelectedSlot()));
+                }
                 if (playFeedback) {
                     playPickSound(client);
                     showPickFeedback(client, requiredItem);
