@@ -338,7 +338,7 @@ public class ChunkFlightRouteRenderer implements IRenderer {
         if (remainingAll > 0) {
             lines.add(String.format(Locale.ROOT, "\u00a77Remaining to check: \u00a7c%d chunks", remainingAll));
         } else {
-            lines.add(String.format(Locale.ROOT, "\u00a7a✔ All %d Encodings Verified!", totalCandidates));
+            lines.add(String.format(Locale.ROOT, "\u00a7a\u2714 All %d Encodings Verified!", totalCandidates));
         }
 
         int colCount = PearlFlightSimulator.getCollidingRoutesCount();
@@ -352,7 +352,7 @@ public class ChunkFlightRouteRenderer implements IRenderer {
             lines.add(String.format(Locale.ROOT, "\u00a7c\u26a0 Collisions on %d encoding%s",
                     colCount, colCount == 1 ? "" : "s"));
         } else if (remainingAll == 0) {
-            lines.add("\u00a7a✔ All routes clear (0 collisions)!");
+            lines.add("\u00a7a\u2714 All routes clear (0 collisions)!");
         }
 
         try {
