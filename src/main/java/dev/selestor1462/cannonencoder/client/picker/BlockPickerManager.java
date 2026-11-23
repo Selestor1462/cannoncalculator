@@ -79,8 +79,19 @@ public final class BlockPickerManager {
         }
         Inventory inv = client.player.getInventory();
 
-        // 1. Check if already holding it in main hand
+        // 1. Check if already holding it in main hand or offhand
         if (client.player.getMainHandItem().is(requiredItem)) {
+            return true;
+        }
+        if (client.player.getOffhandItem().is(requiredItem)) {
+            client.gameMode.handleInventoryMouseClick(
+                client.player.inventoryMenu.containerId, 45, inv.selected,
+                net.minecraft.world.inventory.ClickType.SWAP, client.player
+            );
+            if (playFeedback) {
+                playPickSound(client);
+                showPickFeedback(client, requiredItem);
+            }
             return true;
         }
 
@@ -88,6 +99,9 @@ public final class BlockPickerManager {
         for (int i = 0; i < 9; i++) {
             if (inv.getItem(i).is(requiredItem)) {
                 inv.selected = i;
+                if (client.getConnection() != null) {
+                    client.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(i));
+                }
                 if (playFeedback) {
                     playPickSound(client);
                     showPickFeedback(client, requiredItem);
@@ -99,7 +113,10 @@ public final class BlockPickerManager {
         // 3. Search main inventory (slots 9..35)
         for (int i = 9; i < 36; i++) {
             if (inv.getItem(i).is(requiredItem)) {
-                inv.pickSlot(i);
+                client.gameMode.handleInventoryMouseClick(
+                    client.player.inventoryMenu.containerId, i, inv.selected,
+                    net.minecraft.world.inventory.ClickType.SWAP, client.player
+                );
                 if (playFeedback) {
                     playPickSound(client);
                     showPickFeedback(client, requiredItem);
@@ -110,10 +127,15 @@ public final class BlockPickerManager {
 
         // 4. In Creative mode, grant the item directly
         if (client.player.isCreative()) {
-            for (int i = 0; i < 9; i++) {
-                if (inv.getItem(i).isEmpty()) {
-                    inv.selected = i;
-                    break;
+            if (!client.player.getMainHandItem().isEmpty() && !client.player.getMainHandItem().is(requiredItem)) {
+                for (int i = 0; i < 9; i++) {
+                    if (inv.getItem(i).isEmpty()) {
+                        inv.selected = i;
+                        if (client.getConnection() != null) {
+                            client.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(i));
+                        }
+                        break;
+                    }
                 }
             }
             ItemStack stack = new ItemStack(requiredItem);

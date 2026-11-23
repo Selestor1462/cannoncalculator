@@ -204,7 +204,7 @@ public final class EasyPlaceManager {
 
         // When EasyPlace is enabled: do NOT allow placing extra blocks if aiming against or near the cannon!
         if (matchingPlan == null || WorldHighlightRenderer.isBlockSatisfied(world, matchingPlan)) {
-            boolean nearCannon = isNearCannonStructure(clickedPos, targetPlacePos, visible);
+            boolean nearCannon = isNearCannonStructure(world, clickedPos, targetPlacePos, visible);
             if (nearCannon) {
                 sendCancelMessage(player);
                 return InteractionResult.FAIL;
@@ -302,96 +302,8 @@ public final class EasyPlaceManager {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        boolean isSingleplayer = mc.isLocalServer() && mc.getSingleplayerServer() != null;
         BlockState targetState = WorldHighlightRenderer.resolveBlockState(target);
 
-        if (isSingleplayer) {
-            net.minecraft.server.MinecraftServer server = mc.getSingleplayerServer();
-            if (server == null) {
-                return false;
-            }
-
-            final Item itemToConsume = requiredItem;
-            final int clientSelectedSlot = player.getInventory().selected;
-            server.execute(() -> {
-                net.minecraft.server.level.ServerPlayer serverPlayer = server.getPlayerList().getPlayer(player.getUUID());
-                net.minecraft.server.level.ServerLevel serverWorld = server.getLevel(world.dimension());
-                if (serverWorld == null || serverPlayer == null) return;
-
-                // 1. In Survival mode: consume 1 item from server player
-                if (!serverPlayer.isCreative()) {
-                    serverPlayer.getInventory().selected = clientSelectedSlot;
-
-                    int slotToConsume = -1;
-                    ItemStack serverHeld = serverPlayer.getMainHandItem();
-                    if (isMatchingItem(target, serverHeld, itemToConsume)) {
-                        slotToConsume = serverPlayer.getInventory().selected;
-                    } else {
-                        for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
-                            ItemStack s = serverPlayer.getInventory().getItem(i);
-                            if (isMatchingItem(target, s, itemToConsume)) {
-                                slotToConsume = i;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (slotToConsume == -1) {
-                        return; // Server player has no matching item, abort!
-                    }
-
-                    ItemStack stack = serverPlayer.getInventory().getItem(slotToConsume);
-                    if (stack.is(Items.POWDER_SNOW_BUCKET)) {
-                        serverPlayer.getInventory().setItem(slotToConsume, new ItemStack(Items.BUCKET));
-                    } else {
-                        stack.shrink(1);
-                        if (stack.isEmpty()) {
-                            serverPlayer.getInventory().setItem(slotToConsume, ItemStack.EMPTY);
-                        }
-                    }
-                    serverPlayer.containerMenu.broadcastChanges();
-                    serverPlayer.inventoryMenu.broadcastChanges();
-                }
-
-                // 2. Set block with targetState on server
-                serverWorld.setBlock(targetPos, targetState, net.minecraft.world.level.block.Block.UPDATE_ALL);
-
-                // 3. Play placement sound
-                SoundType soundType = targetState.getSoundType();
-                serverWorld.playSound(null, targetPos, soundType.getPlaceSound(), SoundSource.BLOCKS, (soundType.getVolume() + 1.0f) / 2.0f, soundType.getPitch() * 0.8f);
-            });
-
-            // On client: consume 1 item in survival
-            if (!player.isCreative()) {
-                if (isMatchingItem(target, held, requiredItem)) {
-                    if (held.is(Items.POWDER_SNOW_BUCKET)) {
-                        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BUCKET));
-                    } else {
-                        held.shrink(1);
-                    }
-                } else {
-                    for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                        ItemStack s = player.getInventory().getItem(i);
-                        if (isMatchingItem(target, s, requiredItem)) {
-                            if (s.is(Items.POWDER_SNOW_BUCKET)) {
-                                player.getInventory().setItem(i, new ItemStack(Items.BUCKET));
-                            } else {
-                                s.shrink(1);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-
-            world.setBlock(targetPos, targetState, net.minecraft.world.level.block.Block.UPDATE_ALL);
-            cachePosition(targetPos);
-            this.lastPlaceTimeNano = System.nanoTime();
-            player.swing(InteractionHand.MAIN_HAND);
-            return true;
-        }
-
-        // Multiplayer (dedicated server)
         // Apply Accurate Block Placement protocol (Servux V3 / Carpet V2)
         Vec3 finalHitVec = applyServuxProtocol(targetPos, targetState, clickHit.getLocation());
         BlockHitResult finalHit = new BlockHitResult(finalHitVec, clickHit.getDirection(), clickHit.getBlockPos(), false);
@@ -434,9 +346,9 @@ public final class EasyPlaceManager {
         return stack.is(requiredItem);
     }
 
-    private static boolean isNearCannonStructure(BlockPos clickedPos, BlockPos targetPlacePos, List<HighlightedBlock> visible) {
+    private static boolean isNearCannonStructure(Level world, BlockPos clickedPos, BlockPos targetPlacePos, List<HighlightedBlock> visible) {
         for (HighlightedBlock hb : visible) {
-            BlockPos p = hb.pos();
+            BlockPos p = WorldHighlightRenderer.resolveEffectivePos(world, hb);
             if (Math.abs(p.getX() - targetPlacePos.getX()) <= 4 &&
                 Math.abs(p.getY() - targetPlacePos.getY()) <= 4 &&
                 Math.abs(p.getZ() - targetPlacePos.getZ()) <= 4) {
