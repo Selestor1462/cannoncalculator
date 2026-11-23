@@ -6,11 +6,11 @@ on:
       tag_name:
         description: 'Release Tag'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.1.0'
       release_name:
         description: 'Release Name'
         required: true
-        default: 'Cannon Calculator 1.0.0'
+        default: 'Cannon Calculator 1.1.0'
       prerelease:
         description: 'Mark as pre-release'
         required: false
@@ -49,7 +49,7 @@ jobs:
           mkdir -p artifacts
           MOD_JAR=$(find build/libs -name "cannoncalculator-*.jar" ! -name "*-sources.jar" ! -name "*-dev.jar" | head -n 1)
           if [ -n "$MOD_JAR" ] && [ -f "$MOD_JAR" ]; then
-            cp "$MOD_JAR" "artifacts/cannoncalculator-1.0.0+${{ matrix.branch }}.jar"
+            cp "$MOD_JAR" "artifacts/cannoncalculator-1.1.0+${{ matrix.branch }}.jar"
           fi
           ls -la artifacts/
 
@@ -84,19 +84,27 @@ jobs:
           prerelease: ${{ inputs.prerelease }}
           files: release_assets/*.jar
           body: |
-            ## Cannon Calculator 1.0.0
+            ## Cannon Calculator 1.1.0
 
-            Client-side Minecraft Fabric mod for calculating, encoding, and validating trajectories for the **FTL Pearl Cannon** and **Pig Cannon**.
+            Client-side Minecraft Fabric mod for calculating, encoding, and validating trajectories for the **FTL Pearl Cannon**, **Pig Cannon**, and **Return Cannon**.
+
+            ### Release Changes / Changelog
+            - **Hotfix: Item Duplication in Singleplayer**: Fixed client/server inventory desync when picking blocks from main inventory (`ClickType.SWAP` / `ContainerInput.SWAP`) and eliminated custom server-thread mutations (`server.execute`), resolving duplicate items, ghosting, and watchdog tick timeouts.
+            - **Moved Return Cannon Generator**: Fully integrated the Return Cannon generator from the Schematic Tiling mod (`schematic-tiling-javafied`), including pearl trajectory solver, duper sizing, automated `.litematic` schematic assembly, alignment placement, route collision scanner, and interactive 3D trajectory visualization.
+            - **EasyPlace Placement Restrictions**: Fixed position evaluation in `isNearCannonStructure` so holding RMB when out of items (such as rails) reliably prevents placing extra blocks (e.g. black stained glass) around the cannon.
+            - **Accurate Block Placement Protocol**: Standardized placement across singleplayer and multiplayer using the Servux V3 / Carpet V2 Accurate Block Placement protocol.
+            - **Complete Russian Localization**: Added full Russian translations across the mod.
 
             ### Downloads & Supported Minecraft Versions
-            - **26.3**: `cannoncalculator-1.0.0+26.3.jar` (Fabric Loader 0.20.1+, Java 25)
-            - **26.2**: `cannoncalculator-1.0.0+26.2.jar` (Fabric Loader 0.20.1+, Java 25)
-            - **1.21.11**: `cannoncalculator-1.0.0+1.21.11.jar` (Fabric Loader 0.19.5+, Java 21/25)
-            - **1.21.10**: `cannoncalculator-1.0.0+1.21.10.jar` (Fabric Loader 0.19.5+, Java 21/25)
-            - **1.21**: `cannoncalculator-1.0.0+1.21.jar` (Fabric Loader 0.16.0+, Java 21)
+            - **26.3**: `cannoncalculator-1.1.0+26.3.jar` (Fabric Loader 0.20.1+, Java 25)
+            - **26.2**: `cannoncalculator-1.1.0+26.2.jar` (Fabric Loader 0.20.1+, Java 25)
+            - **1.21.11**: `cannoncalculator-1.1.0+1.21.11.jar` (Fabric Loader 0.19.5+, Java 21/25)
+            - **1.21.10**: `cannoncalculator-1.1.0+1.21.10.jar` (Fabric Loader 0.19.5+, Java 21/25)
+            - **1.21**: `cannoncalculator-1.1.0+1.21.jar` (Fabric Loader 0.16.0+, Java 21)
 
             ### Main Features
             - **Command**: `/cannon` (or `/cannon gui`) to open the calculator interface.
+            - **Return Cannon**: `/cannon generator` (or button in GUI) to calculate and assemble return cannons.
             - **Integrated EasyPlace**: Auto-places ghost outlines from inventory with accurate observer/rail rotations.
             - **Sub-Block FTL Targeting**: Center-of-block targeting (`X.5`, `Z.5`) and adaptive catcher positioning.
             - **Pig Cannon Support**: Four-stage acceleration timings, landing prediction, and Twisting Vines terrain placement.
