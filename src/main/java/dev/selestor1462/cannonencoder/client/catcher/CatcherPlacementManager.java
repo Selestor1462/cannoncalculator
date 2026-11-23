@@ -169,7 +169,7 @@ public final class CatcherPlacementManager {
                 }
 
                 world.setBlock(pos, targetState, net.minecraft.world.level.block.Block.UPDATE_ALL);
-                lp.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+                player.swing(hand);
                 player.sendOverlayMessage(Component.literal("§a[FTL] Placed catcher block at " + pos.toShortString() + "!"));
                 return;
             }
@@ -193,7 +193,7 @@ public final class CatcherPlacementManager {
             Vec3 finalHitVec = dev.selestor1462.cannonencoder.client.easyplace.EasyPlaceManager.applyServuxProtocol(pos, targetState, clickLocation);
             BlockHitResult hit = new BlockHitResult(finalHitVec, clickFace, clickPos, false);
             client.gameMode.useItemOn(lp, hand, hit);
-            lp.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            player.swing(hand);
             player.sendOverlayMessage(Component.literal("§a[FTL] Placed catcher block at " + pos.toShortString() + "!"));
         }
     }
