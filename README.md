@@ -22,6 +22,7 @@ The main command to open the interface is:
 
 - For the **[FTL Pearl Cannon](https://youtu.be/VRyeTVxz5yY)**, the solver calculates travel ticks, TNT charges, distance, exact catcher and landing coordinates, and projects the selector matrix. It also supports sub-block precision (`X.5`, `Z.5`) and auto-generates terrain-adaptive catcher structures.
 - For the **[Pig Cannon](https://youtu.be/ItaWA2U5is0)**, the mod calculates four-stage acceleration timings, travel duration, true landing coordinates, and automatically positions landing markers (Twisting Vines) onto the highest terrain block.
+- For **Return Pearl Cannons** (versions 1.21.10+), the built-in generator calculates TNT charges, duper sizing, and launch timing to propel an ender pearl back to a designated catch station or origin, automatically assembling a complete ready-to-build `.litematic` schematic with all dupers, aligners, wire bridges, and catcher blocks.
 
 Integrated **EasyPlace** allows placing blocks directly from inventory onto ghost outlines with correct observer and rail rotations.
 
@@ -33,6 +34,10 @@ Integrated **EasyPlace** allows placing blocks directly from inventory onto ghos
 | :--- | :--- |
 | `/cannon` | **Main command**: Opens the calculator GUI |
 | `/cannon gui` | Opens the calculator GUI |
+| `/cannon generator` | Opens the Return Cannon Generator dialog (1.21.10+) |
+| `/cannon generator hud` | Toggles the in-flight chunk scan HUD overlay |
+| `/cannon generator rescan` | Restarts the trajectory chunk collision scan |
+| `/cannon generator debug` | Toggles / opens Return Cannon debug generator menu |
 | `/cannon tp` | Teleports directly to the active catcher block or landing position |
 | `/cannon check` | Validates placed in-world blocks against the active encoding plan |
 | `/cannon easyplace` | Toggles EasyPlace auto-placement |
@@ -48,17 +53,29 @@ Integrated **EasyPlace** allows placing blocks directly from inventory onto ghos
 
 ---
 
+## Return Cannon Generator
+
+In Minecraft 1.21.10+, Cannon Calculator includes an in-game Return Cannon generator powered by a pearl trajectory calculator. It calculates the necessary TNT explosion charges, duper sizing, and launch timing to propel an ender pearl back to a designated catch station or origin, automatically assembling a complete ready-to-build `.litematic` schematic with all dupers, aligners, wire bridges, and catcher blocks.
+
+To open the Return Cannon menu, run:
+```
+/cannon generator
+```
+*(If you have an active selection in Litematica, it will automatically use its origin; otherwise it defaults to your player position).*
+
+---
+
 ## Supported Versions
 
 Dedicated branches are maintained and kept synchronized for each supported Minecraft release:
 
-| Branch | Minecraft Version | Requirements |
-| :---: | :---: | :--- |
-| `26.3` | **26.3** | Fabric Loader 0.20.1+, Fabric API 0.166.2+, Java 25 |
-| `26.2` | **26.2** | Fabric Loader 0.20.1+, Fabric API 0.161.0+, Java 25 |
-| `1.21.11` | **1.21.11** | Fabric Loader 0.19.5+, Fabric API 0.141.6+, Java 25 / 21 |
-| `1.21.10` | **1.21.10** | Fabric Loader 0.19.5+, Fabric API 0.138.4+, Java 25 / 21 |
-| `1.21` | **1.21** *(Pig Cannon)* | Fabric Loader 0.16.0+, Fabric API 0.100.0+, Java 21 |
+| Branch | Minecraft Version | Requirements | Features |
+| :---: | :---: | :--- | :--- |
+| `26.3` | **26.3** | Fabric Loader 0.20.1+, Fabric API 0.166.2+, Litematica, MaLiLib, Java 25 | Pig Cannon, FTL Cannon, Return Cannon Generator, EasyPlace |
+| `26.2` | **26.2** | Fabric Loader 0.20.1+, Fabric API 0.161.0+, Litematica, MaLiLib, Java 25 | Pig Cannon, FTL Cannon, Return Cannon Generator, EasyPlace |
+| `1.21.11` | **1.21.11** | Fabric Loader 0.19.5+, Fabric API 0.141.6+, Litematica, MaLiLib, Java 25 / 21 | Pig Cannon, FTL Cannon, Return Cannon Generator, EasyPlace |
+| `1.21.10` | **1.21.10** | Fabric Loader 0.19.5+, Fabric API 0.138.4+, Litematica, MaLiLib, Java 25 / 21 | Pig Cannon, FTL Cannon, Return Cannon Generator, EasyPlace |
+| `1.21` | **1.21** | Fabric Loader 0.16.0+, Fabric API 0.100.0+, Java 21 | Pig Cannon, EasyPlace |
 
 ---
 
@@ -82,6 +99,9 @@ Compiled jar files will be located in `build/libs/cannoncalculator-<version>.jar
 ## Credits
 
 - Trajectory simulation and mathematical cannon algorithms based on calculators by [garlic bread](https://github.com/garlic-bred).
+- Pearl trajectory calculation logic adapted from [PearlCalculatorBlazor by whats2000](https://github.com/whats2000/PearlCalculatorBlazor).
+- Return pearl cannon design and redstone architecture by garlic bread, documented in the [Return Cannon Tutorial](https://www.youtube.com/watch?v=MkEJpBAtin8).
+- [Litematica](https://github.com/maruohon/litematica) and [MaLiLib](https://github.com/maruohon/malilib) by [masa](https://github.com/maruohon) and [Sakura-Ryoko](https://github.com/Sakura-Ryoko).
 
 ---
 

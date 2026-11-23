@@ -40,6 +40,20 @@ public final class CannonCommand {
             // /cannon gui
             .then(ClientCommands.literal("gui")
                 .executes(context -> openGui(stateStore, highlightManager, easyPlaceManager)))
+            // /cannon generator
+            .then(ClientCommands.literal("generator")
+                .executes(context -> openGeneratorGui(context.getSource()))
+                .then(ClientCommands.literal("hud")
+                    .executes(context -> toggleGeneratorHud(context.getSource())))
+                .then(ClientCommands.literal("rescan")
+                    .executes(context -> rescanGeneratorRoute(context.getSource())))
+                .then(ClientCommands.literal("debug")
+                    .executes(context -> toggleGeneratorDebug(context.getSource()))
+                    .then(ClientCommands.literal("open")
+                        .executes(context -> openGeneratorDebugGui(context.getSource()))
+                    )
+                )
+            )
             // /cannon hud
             .then(ClientCommands.literal("hud")
                 .executes(context -> toggleHud(context.getSource(), hudManager)))
@@ -353,5 +367,77 @@ public final class CannonCommand {
             return null;
         }
         return sessionContext.get();
+    }
+
+    private static int openGeneratorGui(FabricClientCommandSource source) {
+        fi.dy.masa.litematica.selection.AreaSelection selection = null;
+        try {
+            selection = fi.dy.masa.litematica.data.DataManager.getSelectionManager().getCurrentSelection();
+        } catch (Throwable ignored) {}
+        final fi.dy.masa.litematica.selection.AreaSelection finalSelection = selection;
+        PigCannonEncoderClient.setScreenNextTick(() -> new dev.selestor1462.cannonencoder.client.gui.GuiReturnCannon(finalSelection, null));
+        return 1;
+    }
+
+    private static int toggleGeneratorHud(FabricClientCommandSource source) {
+        dev.selestor1462.cannonencoder.client.util.ChunkFlightRouteRenderer.toggleHud();
+        dev.selestor1462.cannonencoder.client.gui.GuiReturnCannon.setLastShowRouteHud(dev.selestor1462.cannonencoder.client.util.ChunkFlightRouteRenderer.isHudEnabled());
+        String state = dev.selestor1462.cannonencoder.client.util.ChunkFlightRouteRenderer.isHudEnabled() ? "§aVISIBLE" : "§cCLOAKED/HIDDEN";
+        source.sendFeedback(Component.literal(PREFIX + "§fRoute scan HUD is now " + state + "."));
+        return 1;
+    }
+
+    private static int rescanGeneratorRoute(FabricClientCommandSource source) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.level != null) {
+            dev.selestor1462.cannonencoder.client.util.ChunkFlightRouteRenderer.restartScan(client.level);
+            dev.selestor1462.cannonencoder.client.util.ChunkFlightRouteRenderer.setHudEnabled(true);
+            dev.selestor1462.cannonencoder.client.gui.GuiReturnCannon.setLastShowRouteHud(true);
+
+            int totalChunks = dev.selestor1462.cannonencoder.cannon.PearlFlightSimulator.getTotalCandidateChunksCount();
+            int loadedChunks = dev.selestor1462.cannonencoder.cannon.PearlFlightSimulator.getVerifiedCandidateChunksCount(client.level);
+            int remaining = Math.max(0, totalChunks - loadedChunks);
+            int colCount = dev.selestor1462.cannonencoder.cannon.PearlFlightSimulator.getCollidingRoutesCount();
+
+            if (totalChunks == 0) {
+                source.sendFeedback(Component.literal(PREFIX + "§eRoute scan restarted. No active cannon solutions loaded."));
+            } else if (remaining > 0) {
+                String colStr = (colCount > 0)
+                        ? String.format(java.util.Locale.ROOT, " §c⚠ %d collision%s detected in loaded chunks!", colCount, colCount == 1 ? "" : "s")
+                        : " §eNo collisions in loaded chunks.";
+                source.sendFeedback(Component.literal(String.format(java.util.Locale.ROOT,
+                        PREFIX + "§fRoute scan started! Checked §e%d / %d §fchunks (§e%d §fremaining).%s",
+                        loadedChunks, totalChunks, remaining, colStr)));
+            } else {
+                String colStr = (colCount == 0)
+                        ? "§a0 collisions detected (all clear)!"
+                        : String.format(java.util.Locale.ROOT, "§c⚠ %d collision%s detected!", colCount, colCount == 1 ? "" : "s");
+                source.sendFeedback(Component.literal(String.format(java.util.Locale.ROOT,
+                        PREFIX + "§fRoute scan complete! All §a%d §fchunks verified. %s",
+                        totalChunks, colStr)));
+            }
+        }
+        return 1;
+    }
+
+    private static int toggleGeneratorDebug(FabricClientCommandSource source) {
+        dev.selestor1462.cannonencoder.client.gui.GuiReturnCannonDebug.debugModeEnabled = !dev.selestor1462.cannonencoder.client.gui.GuiReturnCannonDebug.debugModeEnabled;
+        String state = dev.selestor1462.cannonencoder.client.gui.GuiReturnCannonDebug.debugModeEnabled ? "§aENABLED" : "§cDISABLED";
+        source.sendFeedback(Component.literal(PREFIX + "§fReturn Cannon debug menu is now " + state + "."));
+        return 1;
+    }
+
+    private static int openGeneratorDebugGui(FabricClientCommandSource source) {
+        dev.selestor1462.cannonencoder.client.gui.GuiReturnCannonDebug.debugModeEnabled = true;
+        java.nio.file.Path gameDir = java.nio.file.Path.of(".");
+        try {
+            java.nio.file.Path schemDir = fi.dy.masa.litematica.data.DataManager.getSchematicsBaseDirectory();
+            if (schemDir != null && schemDir.getParent() != null) {
+                gameDir = schemDir.getParent();
+            }
+        } catch (Throwable ignored) {}
+        final java.nio.file.Path finalGameDir = gameDir;
+        PigCannonEncoderClient.setScreenNextTick(() -> new dev.selestor1462.cannonencoder.client.gui.GuiReturnCannonDebug(null, dev.selestor1462.cannonencoder.cannon.PearlCalculator.loadSettings(finalGameDir)));
+        return 1;
     }
 }
