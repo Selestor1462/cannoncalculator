@@ -20,6 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -36,6 +37,7 @@ import net.minecraft.world.level.block.DiodeBlock;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.NoteBlock;
 import net.minecraft.world.level.block.ObserverBlock;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -215,14 +217,8 @@ public final class EasyPlaceManager {
 
         // The position is an unsatisfied ghost block!
         // Verify held item matches required item
-        boolean itemMatches;
-        if (matchingPlan.type() == HighlightType.CATCHER_BLOCK) {
-            Item redGlass = net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS.asItem();
-            itemMatches = held.is(redGlass) || held.is(Items.HONEY_BLOCK) || held.is(Items.SLIME_BLOCK);
-        } else {
-            Item req = BlockPickerManager.resolveRequiredItem(matchingPlan);
-            itemMatches = (req != null && req != Items.AIR && held.is(req));
-        }
+        Item req = BlockPickerManager.resolveRequiredItem(matchingPlan);
+        boolean itemMatches = (req != null && req != Items.AIR && isMatchingItem(matchingPlan, held, req));
 
         if (!itemMatches) {
             // Placement restriction: prevent placing wrong block type into ghost outline
@@ -299,12 +295,7 @@ public final class EasyPlaceManager {
 
         // Verify carried item matches required item
         ItemStack held = player.getMainHandItem();
-        if (target.type() == HighlightType.CATCHER_BLOCK) {
-            Item redGlass = net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS.asItem();
-            if (!held.is(redGlass) && !held.is(Items.HONEY_BLOCK) && !held.is(Items.SLIME_BLOCK)) {
-                return false;
-            }
-        } else if (!held.is(requiredItem)) {
+        if (!isMatchingItem(target, held, requiredItem)) {
             return false;
         }
 
@@ -315,12 +306,90 @@ public final class EasyPlaceManager {
 
         Minecraft mc = Minecraft.getInstance();
         boolean isSingleplayer = mc.isLocalServer() && mc.getSingleplayerServer() != null;
-
         BlockState targetState = WorldHighlightRenderer.resolveBlockState(target);
 
+        if (isSingleplayer) {
+            net.minecraft.server.MinecraftServer server = mc.getSingleplayerServer();
+            if (server == null) {
+                return false;
+            }
+
+            final Item itemToConsume = requiredItem;
+            server.execute(() -> {
+                net.minecraft.server.level.ServerPlayer serverPlayer = server.getPlayerList().getPlayer(player.getUUID());
+                net.minecraft.server.level.ServerLevel serverWorld = server.getLevel(world.dimension());
+                if (serverWorld == null || serverPlayer == null) return;
+
+                // 1. In Survival mode: consume 1 item from server player
+                if (!serverPlayer.isCreative()) {
+                    int slotToConsume = -1;
+                    ItemStack serverHeld = serverPlayer.getMainHandItem();
+                    if (isMatchingItem(target, serverHeld, itemToConsume)) {
+                        slotToConsume = serverPlayer.getInventory().getSelectedSlot();
+                    } else {
+                        for (int i = 0; i < serverPlayer.getInventory().getContainerSize(); i++) {
+                            ItemStack s = serverPlayer.getInventory().getItem(i);
+                            if (isMatchingItem(target, s, itemToConsume)) {
+                                slotToConsume = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (slotToConsume == -1) {
+                        return; // Server player has no matching item, abort!
+                    }
+
+                    ItemStack stack = serverPlayer.getInventory().getItem(slotToConsume);
+                    if (stack.is(Items.POWDER_SNOW_BUCKET)) {
+                        serverPlayer.getInventory().setItem(slotToConsume, new ItemStack(Items.BUCKET));
+                    } else {
+                        serverPlayer.getInventory().removeItem(slotToConsume, 1);
+                    }
+                    serverPlayer.containerMenu.broadcastChanges();
+                }
+
+                // 2. Set block with targetState on server
+                serverWorld.setBlock(targetPos, targetState, net.minecraft.world.level.block.Block.UPDATE_ALL);
+
+                // 3. Play placement sound
+                SoundType soundType = targetState.getSoundType();
+                serverWorld.playSound(null, targetPos, soundType.getPlaceSound(), SoundSource.BLOCKS, (soundType.getVolume() + 1.0f) / 2.0f, soundType.getPitch() * 0.8f);
+            });
+
+            // On client: consume 1 item in survival
+            if (!player.isCreative()) {
+                if (isMatchingItem(target, held, requiredItem)) {
+                    if (held.is(Items.POWDER_SNOW_BUCKET)) {
+                        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BUCKET));
+                    } else {
+                        held.shrink(1);
+                    }
+                } else {
+                    for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                        ItemStack s = player.getInventory().getItem(i);
+                        if (isMatchingItem(target, s, requiredItem)) {
+                            if (s.is(Items.POWDER_SNOW_BUCKET)) {
+                                player.getInventory().setItem(i, new ItemStack(Items.BUCKET));
+                            } else {
+                                s.shrink(1);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            world.setBlock(targetPos, targetState, net.minecraft.world.level.block.Block.UPDATE_ALL);
+            cachePosition(targetPos);
+            this.lastPlaceTimeNano = System.nanoTime();
+            player.swing(InteractionHand.MAIN_HAND);
+            return true;
+        }
+
+        // Multiplayer (dedicated server)
         // Apply Accurate Block Placement protocol (Servux V3 / Carpet V2)
         Vec3 finalHitVec = applyServuxProtocol(targetPos, targetState, clickHit.getLocation());
-
         BlockHitResult finalHit = new BlockHitResult(finalHitVec, clickHit.getDirection(), clickHit.getBlockPos(), false);
 
         // Fake sneak state if placing against interactive blocks (NoteBlock, Repeater, etc.)
@@ -347,25 +416,18 @@ public final class EasyPlaceManager {
             cachePosition(targetPos);
             this.lastPlaceTimeNano = System.nanoTime();
             player.swing(InteractionHand.MAIN_HAND);
-
-            // In singleplayer, force the exact target blockstate directly on the integrated server
-            if (isSingleplayer) {
-                net.minecraft.server.MinecraftServer server = mc.getSingleplayerServer();
-                if (server != null) {
-                    server.execute(() -> {
-                        net.minecraft.server.level.ServerLevel serverWorld = server.getLevel(world.dimension());
-                        if (serverWorld != null) {
-                            serverWorld.setBlock(targetPos, targetState, net.minecraft.world.level.block.Block.UPDATE_CLIENTS | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE);
-                        }
-                    });
-                }
-                world.setBlock(targetPos, targetState, net.minecraft.world.level.block.Block.UPDATE_CLIENTS | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE);
-            }
-
             return true;
         }
 
         return false;
+    }
+
+    private static boolean isMatchingItem(HighlightedBlock target, ItemStack stack, Item requiredItem) {
+        if (stack == null || stack.isEmpty()) return false;
+        if (target != null && target.type() == HighlightType.CATCHER_BLOCK) {
+            return stack.is(requiredItem) || stack.is(Items.HONEY_BLOCK) || stack.is(Items.SLIME_BLOCK);
+        }
+        return stack.is(requiredItem);
     }
 
     private record EasyPlaceCandidate(
