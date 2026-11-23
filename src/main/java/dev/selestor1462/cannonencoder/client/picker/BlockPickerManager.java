@@ -79,8 +79,20 @@ public final class BlockPickerManager {
         }
         Inventory inv = client.player.getInventory();
 
-        // 1. Check if already holding it in main hand
+        // 1. Check if already holding it in main hand or offhand
         if (client.player.getMainHandItem().is(requiredItem)) {
+            return true;
+        }
+        if (client.player.getOffhandItem().is(requiredItem)) {
+            int selectedSlot = inv.getSelectedSlot();
+            client.gameMode.handleInventoryMouseClick(
+                client.player.inventoryMenu.containerId, 45, selectedSlot,
+                net.minecraft.world.inventory.ClickType.SWAP, client.player
+            );
+            if (playFeedback) {
+                playPickSound(client);
+                showPickFeedback(client, requiredItem);
+            }
             return true;
         }
 
@@ -102,10 +114,11 @@ public final class BlockPickerManager {
         // 3. Search main inventory (slots 9..35)
         for (int i = 9; i < 36; i++) {
             if (inv.getItem(i).is(requiredItem)) {
-                inv.pickSlot(i);
-                if (client.getConnection() != null) {
-                    client.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(inv.getSelectedSlot()));
-                }
+                int selectedSlot = inv.getSelectedSlot();
+                client.gameMode.handleInventoryMouseClick(
+                    client.player.inventoryMenu.containerId, i, selectedSlot,
+                    net.minecraft.world.inventory.ClickType.SWAP, client.player
+                );
                 if (playFeedback) {
                     playPickSound(client);
                     showPickFeedback(client, requiredItem);
@@ -116,15 +129,22 @@ public final class BlockPickerManager {
 
         // 4. In Creative mode, grant the item directly
         if (client.player.isCreative()) {
-            for (int i = 0; i < 9; i++) {
-                if (inv.getItem(i).isEmpty()) {
-                    inv.setSelectedSlot(i);
-                    break;
+            int selectedSlot = inv.getSelectedSlot();
+            if (!client.player.getMainHandItem().isEmpty() && !client.player.getMainHandItem().is(requiredItem)) {
+                for (int i = 0; i < 9; i++) {
+                    if (inv.getItem(i).isEmpty()) {
+                        inv.setSelectedSlot(i);
+                        selectedSlot = i;
+                        if (client.getConnection() != null) {
+                            client.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(i));
+                        }
+                        break;
+                    }
                 }
             }
             ItemStack stack = new ItemStack(requiredItem);
-            inv.setItem(inv.getSelectedSlot(), stack);
-            client.gameMode.handleCreativeModeItemAdd(stack, 36 + inv.getSelectedSlot());
+            inv.setItem(selectedSlot, stack);
+            client.gameMode.handleCreativeModeItemAdd(stack, 36 + selectedSlot);
             if (playFeedback) {
                 playPickSound(client);
                 showPickFeedback(client, requiredItem);

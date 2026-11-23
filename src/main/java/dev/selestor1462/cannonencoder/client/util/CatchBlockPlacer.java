@@ -80,17 +80,8 @@ public class CatchBlockPlacer implements IClientTickHandler {
 
             // Require chunk to be loaded for at least 4 ticks, or timeout fallback at 40 ticks (~2 sec)
             if (this.chunkLoadedTicks >= 4 || this.ticksWaiting >= 40) {
-                // 2. Set block directly in singleplayer without /setblock commands
-                if (mc.isLocalServer() && mc.getSingleplayerServer() != null) {
-                    net.minecraft.server.MinecraftServer server = mc.getSingleplayerServer();
-                    server.execute(() -> {
-                        net.minecraft.server.level.ServerLevel serverWorld = server.getLevel(mc.player.level().dimension());
-                        if (serverWorld != null) {
-                            serverWorld.setBlock(this.targetPos, net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_ALL);
-                        }
-                    });
-                } else if (mc.gameMode != null && mc.player != null) {
-                    // Multiplayer: apply Servux accurate placement protocol
+                // 2. Place using gameMode.useItemOn with Servux protocol
+                if (mc.gameMode != null && mc.player != null) {
                     net.minecraft.world.phys.Vec3 hitVec = dev.selestor1462.cannonencoder.client.easyplace.EasyPlaceManager.applyServuxProtocol(
                         this.targetPos, net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS.defaultBlockState(), net.minecraft.world.phys.Vec3.atCenterOf(this.targetPos));
                     mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND,
