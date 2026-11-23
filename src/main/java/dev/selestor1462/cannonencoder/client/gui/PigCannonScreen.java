@@ -208,7 +208,7 @@ public final class PigCannonScreen extends Screen {
 
         boolean easyEnabled = (this.easyPlaceManager != null && this.easyPlaceManager.isEnabled());
         this.easyPlaceBtn = Button.builder(
-            Component.literal(easyEnabled ? "§a" : "§7").append(Component.translatable("cannoncalculator.gui.easyplace_btn")),
+            Component.translatable(easyEnabled ? "cannoncalculator.gui.easyplace_btn_on" : "cannoncalculator.gui.easyplace_btn_off"),
             btn -> this.onToggleEasyPlace()
         ).bounds(0, 0, 58, 16).build();
         this.easyPlaceBtn.setTooltip(Tooltip.create(
@@ -502,7 +502,7 @@ public final class PigCannonScreen extends Screen {
     private void onToggleEasyPlace() {
         if (this.easyPlaceManager == null) return;
         boolean enabled = this.easyPlaceManager.toggle();
-        this.easyPlaceBtn.setMessage(Component.literal(enabled ? "§a" : "§7").append(Component.translatable("cannoncalculator.gui.easyplace_btn")));
+        this.easyPlaceBtn.setMessage(Component.translatable(enabled ? "cannoncalculator.gui.easyplace_btn_on" : "cannoncalculator.gui.easyplace_btn_off"));
         this.easyPlaceBtn.setTooltip(Tooltip.create(
             Component.translatable(enabled ? "cannoncalculator.gui.easyplace_active" : "cannoncalculator.gui.easyplace_inactive")
         ));

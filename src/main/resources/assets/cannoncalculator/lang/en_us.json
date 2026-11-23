@@ -482,6 +482,8 @@
   "cannoncalculator.gui.easyplace_active": "EasyPlace: Active (click to toggle)",
   "cannoncalculator.gui.easyplace_inactive": "EasyPlace: Inactive (click to toggle)",
   "cannoncalculator.gui.easyplace_btn": "⚡ EasyPlace",
+  "cannoncalculator.gui.easyplace_btn_on": "§a⚡ EasyPlace",
+  "cannoncalculator.gui.easyplace_btn_off": "§7⚡ EasyPlace",
   "cannoncalculator.gui.rails_step_tooltip": "Rails: Step (only render ghost rails after placing supporting block)",
   "cannoncalculator.gui.rails_all_tooltip": "Rails: All (render all ghost rails immediately)",
   "cannoncalculator.gui.glow_tooltip": "Hologram glowing toggle",
