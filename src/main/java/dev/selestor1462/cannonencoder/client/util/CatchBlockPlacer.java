@@ -80,9 +80,22 @@ public class CatchBlockPlacer implements IClientTickHandler {
 
             // Require chunk to be loaded for at least 4 ticks, or timeout fallback at 40 ticks (~2 sec)
             if (this.chunkLoadedTicks >= 4 || this.ticksWaiting >= 40) {
-                // 2. Send setblock command
-                mc.getConnection().sendCommand(String.format(Locale.ROOT, "setblock %d %d %d minecraft:red_stained_glass",
-                        this.targetPos.getX(), this.targetPos.getY(), this.targetPos.getZ()));
+                // 2. Set block directly in singleplayer without /setblock commands
+                if (mc.isLocalServer() && mc.getSingleplayerServer() != null) {
+                    net.minecraft.server.MinecraftServer server = mc.getSingleplayerServer();
+                    server.execute(() -> {
+                        net.minecraft.server.level.ServerLevel serverWorld = server.getLevel(mc.player.level().dimension());
+                        if (serverWorld != null) {
+                            serverWorld.setBlock(this.targetPos, net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_ALL);
+                        }
+                    });
+                } else if (mc.gameMode != null && mc.player != null) {
+                    // Multiplayer: apply Servux accurate placement protocol
+                    net.minecraft.world.phys.Vec3 hitVec = dev.selestor1462.cannonencoder.client.easyplace.EasyPlaceManager.applyServuxProtocol(
+                        this.targetPos, net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS.defaultBlockState(), net.minecraft.world.phys.Vec3.atCenterOf(this.targetPos));
+                    mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND,
+                        new net.minecraft.world.phys.BlockHitResult(hitVec, net.minecraft.core.Direction.UP, this.targetPos, false));
+                }
 
                 this.state = State.WAIT_AFTER_SETBLOCK;
                 this.ticksWaiting = 0;
