@@ -86,7 +86,7 @@ public final class EasyPlaceManager {
         long now = System.nanoTime();
         if (now - this.lastCancelMessageTimeNano > 400_000_000L) {
             this.lastCancelMessageTimeNano = now;
-            player.displayClientMessage(Component.literal("§cAction prevented by cannon encoder easy place mode"), true);
+            player.displayClientMessage(Component.translatable("cannoncalculator.gui.easyplace_prevented"), true);
         }
     }
 
@@ -140,11 +140,9 @@ public final class EasyPlaceManager {
         }
 
         if (client.options.keyUse.isDown()) {
-            boolean placed = tryEasyPlace(client);
-            if (placed) {
-                while (client.options.keyUse.consumeClick()) {
-                    // Drain clicks to prevent duplicate vanilla interactions
-                }
+            tryEasyPlace(client);
+            while (client.options.keyUse.consumeClick()) {
+                // Drain clicks to prevent duplicate vanilla interactions
             }
         }
     }
@@ -204,14 +202,13 @@ public final class EasyPlaceManager {
             }
         }
 
-        // If placing into an unreserved space (e.g. extra observer, custom wiring, support block),
-        // allow vanilla placement! Never restrict or cancel blocks outside designated ghost block positions.
-        if (matchingPlan == null) {
-            return InteractionResult.PASS;
-        }
-
-        // If the designated ghost block is already placed and satisfied, allow interaction
-        if (WorldHighlightRenderer.isBlockSatisfied(world, matchingPlan)) {
+        // When EasyPlace is enabled: do NOT allow placing extra blocks if aiming against or near the cannon!
+        if (matchingPlan == null || WorldHighlightRenderer.isBlockSatisfied(world, matchingPlan)) {
+            boolean nearCannon = isNearCannonStructure(clickedPos, targetPlacePos, visible);
+            if (nearCannon) {
+                sendCancelMessage(player);
+                return InteractionResult.FAIL;
+            }
             return InteractionResult.PASS;
         }
 
@@ -289,7 +286,7 @@ public final class EasyPlaceManager {
         }
 
         if (!hasItem) {
-            player.displayClientMessage(Component.literal("§e[EasyPlace] Missing §f" + requiredItem.getName(requiredItem.getDefaultInstance()).getString() + "§e in inventory!"), true);
+            player.displayClientMessage(Component.translatable("cannoncalculator.gui.easyplace_missing", requiredItem.getName(requiredItem.getDefaultInstance()).getString()), true);
             return false;
         }
 
@@ -315,6 +312,7 @@ public final class EasyPlaceManager {
             }
 
             final Item itemToConsume = requiredItem;
+            final int clientSelectedSlot = player.getInventory().selected;
             server.execute(() -> {
                 net.minecraft.server.level.ServerPlayer serverPlayer = server.getPlayerList().getPlayer(player.getUUID());
                 net.minecraft.server.level.ServerLevel serverWorld = server.getLevel(world.dimension());
@@ -322,6 +320,8 @@ public final class EasyPlaceManager {
 
                 // 1. In Survival mode: consume 1 item from server player
                 if (!serverPlayer.isCreative()) {
+                    serverPlayer.getInventory().selected = clientSelectedSlot;
+
                     int slotToConsume = -1;
                     ItemStack serverHeld = serverPlayer.getMainHandItem();
                     if (isMatchingItem(target, serverHeld, itemToConsume)) {
@@ -344,9 +344,13 @@ public final class EasyPlaceManager {
                     if (stack.is(Items.POWDER_SNOW_BUCKET)) {
                         serverPlayer.getInventory().setItem(slotToConsume, new ItemStack(Items.BUCKET));
                     } else {
-                        serverPlayer.getInventory().removeItem(slotToConsume, 1);
+                        stack.shrink(1);
+                        if (stack.isEmpty()) {
+                            serverPlayer.getInventory().setItem(slotToConsume, ItemStack.EMPTY);
+                        }
                     }
                     serverPlayer.containerMenu.broadcastChanges();
+                    serverPlayer.inventoryMenu.broadcastChanges();
                 }
 
                 // 2. Set block with targetState on server
@@ -428,6 +432,23 @@ public final class EasyPlaceManager {
             return stack.is(requiredItem) || stack.is(Items.HONEY_BLOCK) || stack.is(Items.SLIME_BLOCK);
         }
         return stack.is(requiredItem);
+    }
+
+    private static boolean isNearCannonStructure(BlockPos clickedPos, BlockPos targetPlacePos, List<HighlightedBlock> visible) {
+        for (HighlightedBlock hb : visible) {
+            BlockPos p = hb.pos();
+            if (Math.abs(p.getX() - targetPlacePos.getX()) <= 4 &&
+                Math.abs(p.getY() - targetPlacePos.getY()) <= 4 &&
+                Math.abs(p.getZ() - targetPlacePos.getZ()) <= 4) {
+                return true;
+            }
+            if (Math.abs(p.getX() - clickedPos.getX()) <= 4 &&
+                Math.abs(p.getY() - clickedPos.getY()) <= 4 &&
+                Math.abs(p.getZ() - clickedPos.getZ()) <= 4) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private record EasyPlaceCandidate(
