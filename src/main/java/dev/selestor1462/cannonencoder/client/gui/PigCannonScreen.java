@@ -25,6 +25,7 @@ import dev.selestor1462.cannonencoder.client.WorldHighlightRenderer;
 import dev.selestor1462.cannonencoder.state.TargetRecord;
 import dev.selestor1462.cannonencoder.template.HighlightedBlock;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
@@ -63,10 +64,33 @@ public final class PigCannonScreen extends Screen {
     private EditBox maxTicksBox;
     private EditBox maxDistBox;
 
+    public enum FtlSortMode {
+        DESTINATION("Dest"),
+        TNT("TNT"),
+        TICKS("Ticks");
+
+        private final String displayName;
+
+        FtlSortMode(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String displayName() {
+            return this.displayName;
+        }
+    }
+
     // Solution candidates list & scroll offset
     private List<FtlCalculationResult> ftlResults = new ArrayList<>();
     private int currentResultIndex = 0;
     private int tableScrollOffset = 0;
+
+    // Sorting
+    private FtlSortMode sortMode = FtlSortMode.DESTINATION;
+    private boolean sortAscending = true;
+    private Button sortDestBtn;
+    private Button sortTntBtn;
+    private Button sortTicksBtn;
 
     // Action buttons
     private Button calculateBtn;
@@ -107,6 +131,8 @@ public final class PigCannonScreen extends Screen {
     private static CannonMode cachedMode = null;
     private static int cachedSelectedLevel = -1;
     private static int cachedSelectedCol = -1;
+    private static FtlSortMode cachedSortMode = FtlSortMode.DESTINATION;
+    private static boolean cachedSortAscending = true;
 
     public PigCannonScreen(
         ClientStateStore stateStore,
@@ -124,6 +150,8 @@ public final class PigCannonScreen extends Screen {
         this.stateStore = stateStore;
         this.highlightManager = highlightManager;
         this.easyPlaceManager = easyPlaceManager;
+        this.sortMode = cachedSortMode;
+        this.sortAscending = cachedSortAscending;
 
         Optional<ClientSessionContext> sessionContext = ClientSessionContext.resolve(Minecraft.getInstance());
         if (sessionContext.isPresent()) {
@@ -160,7 +188,7 @@ public final class PigCannonScreen extends Screen {
     }
 
     private int getTableY() {
-        return (this.currentMode == CannonMode.FTL_PEARL_CANNON) ? 89 : 70;
+        return (this.currentMode == CannonMode.FTL_PEARL_CANNON) ? 106 : 70;
     }
 
     private int getTableHeight() {
@@ -320,6 +348,38 @@ public final class PigCannonScreen extends Screen {
             .bounds(leftColX + 98, actionY, 96, 18)
             .build();
         this.addRenderableWidget(this.calculateBtn);
+
+        // Sort buttons row (Dest, TNT, Ticks) above FTL candidates table
+        int sortY = actionY + 20;
+        int sortBtnW = 64;
+        this.sortDestBtn = Button.builder(Component.literal("Dest"), btn -> this.setSortMode(FtlSortMode.DESTINATION))
+            .bounds(leftColX, sortY, sortBtnW, 16)
+            .build();
+        this.sortDestBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
+            Component.translatable("cannoncalculator.gui.sort.dest.tooltip")
+        ));
+        this.sortDestBtn.visible = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
+        this.addRenderableWidget(this.sortDestBtn);
+
+        this.sortTntBtn = Button.builder(Component.literal("TNT"), btn -> this.setSortMode(FtlSortMode.TNT))
+            .bounds(leftColX + sortBtnW + 1, sortY, sortBtnW, 16)
+            .build();
+        this.sortTntBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
+            Component.translatable("cannoncalculator.gui.sort.tnt.tooltip")
+        ));
+        this.sortTntBtn.visible = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
+        this.addRenderableWidget(this.sortTntBtn);
+
+        this.sortTicksBtn = Button.builder(Component.literal("Ticks"), btn -> this.setSortMode(FtlSortMode.TICKS))
+            .bounds(leftColX + (sortBtnW * 2) + 2, sortY, sortBtnW, 16)
+            .build();
+        this.sortTicksBtn.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
+            Component.translatable("cannoncalculator.gui.sort.ticks.tooltip")
+        ));
+        this.sortTicksBtn.visible = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
+        this.addRenderableWidget(this.sortTicksBtn);
+
+        this.updateSortButtonLabels();
 
         // Bottom action buttons: Place Catcher, TP Catcher, Check Encoding, EasyPlace, Rails Toggle, Glow Toggle, Clear, Done
         int bottomY = this.height - 19;
@@ -562,6 +622,10 @@ public final class PigCannonScreen extends Screen {
         }
         if (this.setAnchorBtn != null) { this.setAnchorBtn.active = active; this.setAnchorBtn.visible = active; }
         if (this.calculateBtn != null) { this.calculateBtn.active = active; this.calculateBtn.visible = active; }
+        boolean isFtl = (this.currentMode == CannonMode.FTL_PEARL_CANNON);
+        if (this.sortDestBtn != null) { this.sortDestBtn.active = active; this.sortDestBtn.visible = active && isFtl; }
+        if (this.sortTntBtn != null) { this.sortTntBtn.active = active; this.sortTntBtn.visible = active && isFtl; }
+        if (this.sortTicksBtn != null) { this.sortTicksBtn.active = active; this.sortTicksBtn.visible = active && isFtl; }
         if (this.tpCatcherBtn != null) {
             this.tpCatcherBtn.active = active;
             this.tpCatcherBtn.visible = active && (this.currentMode == CannonMode.FTL_PEARL_CANNON);
@@ -723,6 +787,8 @@ public final class PigCannonScreen extends Screen {
                     return;
                 }
 
+                this.sortFtlResults();
+
                 this.statusMessage = String.format(java.util.Locale.ROOT,
                     "§aCalculated from Pearl [%d, %d]! Found %d options.",
                     (int) Math.floor(pearlX), (int) Math.floor(pearlZ), this.ftlResults.size());
@@ -823,6 +889,91 @@ public final class PigCannonScreen extends Screen {
         }
         this.statusMessage = String.format("§aSelected #%d/%d: Dist %.1fm | %d Ticks | TNT: %d | Catcher: %s",
             idx + 1, this.ftlResults.size(), res.distance(), res.ticks(), res.totalTnt(), res.catcherPos().asInt());
+    }
+
+    private void setSortMode(FtlSortMode mode) {
+        if (this.sortMode == mode) {
+            this.sortAscending = !this.sortAscending;
+        } else {
+            this.sortMode = mode;
+            this.sortAscending = true;
+        }
+        cachedSortMode = this.sortMode;
+        cachedSortAscending = this.sortAscending;
+        this.sortFtlResults();
+        this.updateSortButtonLabels();
+        if (!this.ftlResults.isEmpty() && this.currentResultIndex >= 0 && this.currentResultIndex < this.ftlResults.size()) {
+            selectResult(this.currentResultIndex);
+        }
+    }
+
+    private void updateSortButtonLabels() {
+        if (this.sortDestBtn != null) {
+            String name = Component.translatable("cannoncalculator.gui.sort.dest").getString();
+            String label = (this.sortMode == FtlSortMode.DESTINATION)
+                ? (this.sortAscending ? "§e" + name + " ▲" : "§e" + name + " ▼")
+                : name;
+            this.sortDestBtn.setMessage(Component.literal(label));
+        }
+        if (this.sortTntBtn != null) {
+            String name = Component.translatable("cannoncalculator.gui.sort.tnt").getString();
+            String label = (this.sortMode == FtlSortMode.TNT)
+                ? (this.sortAscending ? "§e" + name + " ▲" : "§e" + name + " ▼")
+                : name;
+            this.sortTntBtn.setMessage(Component.literal(label));
+        }
+        if (this.sortTicksBtn != null) {
+            String name = Component.translatable("cannoncalculator.gui.sort.ticks").getString();
+            String label = (this.sortMode == FtlSortMode.TICKS)
+                ? (this.sortAscending ? "§e" + name + " ▲" : "§e" + name + " ▼")
+                : name;
+            this.sortTicksBtn.setMessage(Component.literal(label));
+        }
+    }
+
+    private void sortFtlResults() {
+        if (this.ftlResults.isEmpty()) return;
+
+        FtlCalculationResult selected = (this.currentResultIndex >= 0 && this.currentResultIndex < this.ftlResults.size())
+            ? this.ftlResults.get(this.currentResultIndex) : null;
+
+        Comparator<FtlCalculationResult> comp = switch (this.sortMode) {
+            case TNT -> {
+                Comparator<FtlCalculationResult> c = Comparator.comparingInt(FtlCalculationResult::totalTnt);
+                if (!this.sortAscending) c = c.reversed();
+                yield c.thenComparingDouble(FtlCalculationResult::distance)
+                       .thenComparingInt(FtlCalculationResult::ticks);
+            }
+            case TICKS -> {
+                Comparator<FtlCalculationResult> c = Comparator.comparingInt(FtlCalculationResult::ticks);
+                if (!this.sortAscending) c = c.reversed();
+                yield c.thenComparingDouble(FtlCalculationResult::distance)
+                       .thenComparingInt(FtlCalculationResult::totalTnt);
+            }
+            case DESTINATION -> {
+                Comparator<FtlCalculationResult> c = Comparator.comparingDouble(FtlCalculationResult::distance);
+                if (!this.sortAscending) c = c.reversed();
+                yield c.thenComparingInt(FtlCalculationResult::totalTnt)
+                       .thenComparingInt(FtlCalculationResult::ticks);
+            }
+        };
+
+        this.ftlResults.sort(comp);
+        cachedFtlResults = new ArrayList<>(this.ftlResults);
+
+        if (selected != null) {
+            int newIdx = this.ftlResults.indexOf(selected);
+            if (newIdx >= 0) {
+                this.currentResultIndex = newIdx;
+                cachedResultIndex = newIdx;
+            }
+        }
+
+        int totalRows = this.ftlResults.size();
+        int visibleRows = Math.max(1, getTableHeight() / 22);
+        int maxScroll = Math.max(0, totalRows - visibleRows);
+        this.tableScrollOffset = Math.max(0, Math.min(this.tableScrollOffset, maxScroll));
+        cachedTableScroll = this.tableScrollOffset;
     }
 
     private void onApplyHighlight() {
