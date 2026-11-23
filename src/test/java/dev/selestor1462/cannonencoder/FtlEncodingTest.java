@@ -319,4 +319,31 @@ public class FtlEncodingTest {
         assertFalse(res6688.isEmpty());
         assertEquals(72, res6688.size());
     }
+
+    @Test
+    public void testFtlSortingOptions() {
+        FtlCalculator calc = new FtlCalculator();
+        Vec3d pearl = new Vec3d(200.51, FtlConstants.PEARL_Y, 8.51);
+        Vec3d dest = new Vec3d(25.0, 256.0, -200000.0);
+        java.util.List<FtlCalculationResult> list = new java.util.ArrayList<>(calc.calculate(pearl, dest, 6688, 500, 50.0, 3344));
+        assertFalse(list.isEmpty());
+
+        // Sort by TNT ascending
+        list.sort(java.util.Comparator.comparingInt(FtlCalculationResult::totalTnt));
+        for (int i = 0; i < list.size() - 1; i++) {
+            assertTrue(list.get(i).totalTnt() <= list.get(i + 1).totalTnt());
+        }
+
+        // Sort by Ticks ascending
+        list.sort(java.util.Comparator.comparingInt(FtlCalculationResult::ticks));
+        for (int i = 0; i < list.size() - 1; i++) {
+            assertTrue(list.get(i).ticks() <= list.get(i + 1).ticks());
+        }
+
+        // Sort by Destination (distance) ascending
+        list.sort(java.util.Comparator.comparingDouble(FtlCalculationResult::distance));
+        for (int i = 0; i < list.size() - 1; i++) {
+            assertTrue(list.get(i).distance() <= list.get(i + 1).distance());
+        }
+    }
 }
