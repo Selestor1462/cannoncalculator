@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "cannoncalculator",
-  "version": "1.0.0",
+  "version": "${version}",
   "name": "Cannon Calculator",
   "description": "Client-side cannon calculator and encoder helper for Pig and FTL Pearl cannons.",
   "authors": [
