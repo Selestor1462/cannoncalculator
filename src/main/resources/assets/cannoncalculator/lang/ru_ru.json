@@ -481,6 +481,7 @@
   "cannoncalculator.gui.glow_off": "👁 ВЫКЛ",
   "cannoncalculator.gui.easyplace_active": "EasyPlace: Включён (клик для переключения)",
   "cannoncalculator.gui.easyplace_inactive": "EasyPlace: Выключен (клик для переключения)",
+  "cannoncalculator.gui.easyplace_btn": "⚡ EasyPlace",
   "cannoncalculator.gui.rails_step_tooltip": "Рельсы: Шаг (показывать фантомные рельсы только после установки блока опоры)",
   "cannoncalculator.gui.rails_all_tooltip": "Рельсы: Все (показывать все фантомные рельсы сразу)",
   "cannoncalculator.gui.glow_tooltip": "Переключение свечения голограмм",
