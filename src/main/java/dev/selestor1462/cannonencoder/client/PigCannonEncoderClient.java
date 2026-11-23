@@ -39,6 +39,9 @@ public final class PigCannonEncoderClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        dev.selestor1462.cannonencoder.client.util.ChunkFlightRouteRenderer.init();
+        dev.selestor1462.cannonencoder.client.util.PearlTrajectoryLineRenderer.init();
+
         // Dimension change tracking & deferred GUI opening
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (pendingScreenSupplier != null) {
